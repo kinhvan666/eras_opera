@@ -1,8 +1,9 @@
 services:
-  app:
-    build: .
+  extractor:
+    build:
+      context: ./extractor
     volumes:
-      - .:/app
+      - ./extractor:/app
     environment:
       - ENV=development
     env_file:
