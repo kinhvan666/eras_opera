@@ -2,32 +2,30 @@
 import asyncio
 import sys
 import traceback
-from .client import BaseOperaClient, OperaAuthError
-from .extractors.reservations import ReservationExtractor
-from .database import Database, DatabaseConnectionError
+from src.client import BaseOperaClient, OperaAuthError
+from src.extractors.reservations import ReservationExtractor
+from src.database import Database, DatabaseConnectionError
 
-async def main():
+def main():
     print("Starting data extraction process...")
 
     try:
         # Initialize Database and setup schema/tables
         db = Database()
-        print("Setting up database schema and tables...")
-        db.setup()
+        print("Database initialized.")
 
         # Initialize API client and extractor
-        opera_client = BaseOperaClient()
-        reservation_extractor = ReservationExtractor(opera_client)
+        reservation_extractor = ReservationExtractor()
 
         # Fetch data
         print("Fetching recent reservations...")
-        reservations_data = await reservation_extractor.fetch_recent_reservations()
+        reservations_data = reservation_extractor.extract()
         print(f"Fetched {len(reservations_data)} reservations.")
 
         # Insert data into database
         if reservations_data:
             print("Inserting data into PostgreSQL...")
-            db.insert_raw_data(reservations_data)
+            db.save_reservations(reservations_data)
             print("Data insertion complete.")
 
         # Clean up
@@ -44,4 +42,4 @@ async def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

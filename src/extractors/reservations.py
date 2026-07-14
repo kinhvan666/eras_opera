@@ -6,5 +6,5 @@ class ReservationExtractor:
         self.client = APIClient()
 
     def extract(self):
-        data = self.client.fetch_data("reservations")
+        data = self.client.fetch_data("rsv/v1/reservations")
         return [Reservation(**item) for item in data]
