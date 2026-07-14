@@ -1,0 +1,58 @@
+[0m14:20:10  Running with dbt=1.12.0-rc2
+[0m14:20:11  Registered adapter: postgres=1.10.2
+[0m14:20:12  Found 7 models, 1 snapshot, 27 data tests, 1 source, 475 macros
+[0m14:20:12  
+[0m14:20:12  Concurrency: 1 threads (target='dev')
+[0m14:20:12  
+[0m14:20:12  1 of 23 START test not_null_dim_date_date_day .................................. [RUN]
+[0m14:20:12  1 of 23 PASS not_null_dim_date_date_day ........................................ [[32mPASS[0m in 0.10s]
+[0m14:20:12  2 of 23 START test not_null_dim_date_day_of_week ............................... [RUN]
+[0m14:20:12  2 of 23 PASS not_null_dim_date_day_of_week ..................................... [[32mPASS[0m in 0.05s]
+[0m14:20:12  3 of 23 START test not_null_dim_date_is_weekend ................................ [RUN]
+[0m14:20:13  3 of 23 PASS not_null_dim_date_is_weekend ...................................... [[32mPASS[0m in 0.06s]
+[0m14:20:13  4 of 23 START test not_null_dim_date_month ..................................... [RUN]
+[0m14:20:13  4 of 23 PASS not_null_dim_date_month ........................................... [[32mPASS[0m in 0.04s]
+[0m14:20:13  5 of 23 START test not_null_dim_date_quarter ................................... [RUN]
+[0m14:20:13  5 of 23 PASS not_null_dim_date_quarter ......................................... [[32mPASS[0m in 0.04s]
+[0m14:20:13  6 of 23 START test not_null_dim_date_year ...................................... [RUN]
+[0m14:20:13  6 of 23 PASS not_null_dim_date_year ............................................ [[32mPASS[0m in 0.06s]
+[0m14:20:13  7 of 23 START test not_null_dim_property_hotel_id .............................. [RUN]
+[0m14:20:13  7 of 23 PASS not_null_dim_property_hotel_id .................................... [[32mPASS[0m in 0.05s]
+[0m14:20:13  8 of 23 START test not_null_dim_rate_rate_plan_code ............................ [RUN]
+[0m14:20:13  8 of 23 PASS not_null_dim_rate_rate_plan_code .................................. [[32mPASS[0m in 0.05s]
+[0m14:20:13  9 of 23 START test not_null_dim_rate_rate_sk ................................... [RUN]
+[0m14:20:13  9 of 23 PASS not_null_dim_rate_rate_sk ......................................... [[32mPASS[0m in 0.06s]
+[0m14:20:13  10 of 23 START test not_null_fct_reservation_night_business_date ............... [RUN]
+[0m14:20:13  10 of 23 PASS not_null_fct_reservation_night_business_date ..................... [[32mPASS[0m in 0.05s]
+[0m14:20:13  11 of 23 START test not_null_fct_reservation_night_fact_sk ..................... [RUN]
+[0m14:20:13  11 of 23 PASS not_null_fct_reservation_night_fact_sk ........................... [[32mPASS[0m in 0.05s]
+[0m14:20:13  12 of 23 START test not_null_fct_reservation_night_hotel_id .................... [RUN]
+[0m14:20:13  12 of 23 PASS not_null_fct_reservation_night_hotel_id .......................... [[32mPASS[0m in 0.06s]
+[0m14:20:13  13 of 23 START test not_null_fct_reservation_night_profile_id .................. [RUN]
+[0m14:20:13  13 of 23 PASS not_null_fct_reservation_night_profile_id ........................ [[32mPASS[0m in 0.06s]
+[0m14:20:13  14 of 23 START test not_null_fct_reservation_night_rate_plan_code .............. [RUN]
+[0m14:20:13  14 of 23 PASS not_null_fct_reservation_night_rate_plan_code .................... [[32mPASS[0m in 0.06s]
+[0m14:20:13  15 of 23 START test not_null_fct_reservation_night_reservation_id .............. [RUN]
+[0m14:20:13  15 of 23 PASS not_null_fct_reservation_night_reservation_id .................... [[32mPASS[0m in 0.06s]
+[0m14:20:13  16 of 23 START test not_null_stg_reservations_reservation_id ................... [RUN]
+[0m14:20:13  16 of 23 PASS not_null_stg_reservations_reservation_id ......................... [[32mPASS[0m in 0.05s]
+[0m14:20:13  17 of 23 START test relationships_fct_reservation_night_business_date__date_day__ref_dim_date_  [RUN]
+[0m14:20:13  17 of 23 PASS relationships_fct_reservation_night_business_date__date_day__ref_dim_date_  [[32mPASS[0m in 0.08s]
+[0m14:20:13  18 of 23 START test relationships_fct_reservation_night_hotel_id__hotel_id__ref_dim_property_  [RUN]
+[0m14:20:13  18 of 23 PASS relationships_fct_reservation_night_hotel_id__hotel_id__ref_dim_property_  [[32mPASS[0m in 0.05s]
+[0m14:20:13  19 of 23 START test unique_dim_date_date_day ................................... [RUN]
+[0m14:20:14  19 of 23 PASS unique_dim_date_date_day ......................................... [[32mPASS[0m in 0.06s]
+[0m14:20:14  20 of 23 START test unique_dim_property_hotel_id ............................... [RUN]
+[0m14:20:14  20 of 23 PASS unique_dim_property_hotel_id ..................................... [[32mPASS[0m in 0.06s]
+[0m14:20:14  21 of 23 START test unique_dim_rate_rate_sk .................................... [RUN]
+[0m14:20:14  21 of 23 PASS unique_dim_rate_rate_sk .......................................... [[32mPASS[0m in 0.07s]
+[0m14:20:14  22 of 23 START test unique_fct_reservation_night_fact_sk ....................... [RUN]
+[0m14:20:14  22 of 23 PASS unique_fct_reservation_night_fact_sk ............................. [[32mPASS[0m in 0.06s]
+[0m14:20:14  23 of 23 START test unique_stg_reservations_reservation_id ..................... [RUN]
+[0m14:20:14  23 of 23 PASS unique_stg_reservations_reservation_id ........................... [[32mPASS[0m in 0.06s]
+[0m14:20:14  
+[0m14:20:14  Finished running 23 data tests in 0 hours 0 minutes and 1.79 seconds (1.79s).
+[0m14:20:14  
+[0m14:20:14  [32mCompleted successfully[0m
+[0m14:20:14  
+[0m14:20:14  Done. PASS=23 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=23

@@ -12,3 +12,5 @@ models:
   eras_dbt:
     staging:
       +materialized: view
+    dimensional:
+      +materialized: table

@@ -1,0 +1,110 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: "Calendar dimension - one row per calendar date"
+    columns:
+      - name: date_day
+        description: "Primary key - calendar date"
+        tests:
+          - unique
+          - not_null
+      - name: year
+        description: "Year component"
+        tests:
+          - not_null
+      - name: quarter
+        description: "Quarter (1-4)"
+        tests:
+          - not_null
+      - name: month
+        description: "Month number (1-12)"
+        tests:
+          - not_null
+      - name: month_name
+        description: "Full month name"
+      - name: day_of_week
+        description: "Day of week (0=Sunday, 6=Saturday)"
+        tests:
+          - not_null
+      - name: day_name
+        description: "Full day name"
+      - name: is_weekend
+        description: "True for Saturday/Sunday"
+        tests:
+          - not_null
+
+  - name: dim_property
+    description: "Property dimension - one row per hotel_id from stg_reservations"
+    columns:
+      - name: hotel_id
+        description: "Primary key - hotel/property identifier"
+        tests:
+          - unique
+          - not_null
+      - name: hotel_name
+        description: "Hotel name (placeholder - not yet available from OPERA master data)"
+
+  - name: dim_rate
+    description: "Rate dimension - one row per unique (rate_plan_code, market_code, source_of_business) combination"
+    columns:
+      - name: rate_sk
+        description: "Surrogate key - md5 hash of rate/market/source combination"
+        tests:
+          - unique
+          - not_null
+      - name: rate_plan_code
+        description: "Rate plan code from reservation"
+        tests:
+          - not_null
+      - name: market_code
+        description: "Market code from reservation"
+      - name: source_of_business
+        description: "Source of business code from reservation"
+
+  - name: fct_reservation_night
+    description: "Fact table - one row per property per reservation per stay night (Kimball reservation-night grain)"
+    columns:
+      - name: fact_sk
+        description: "Composite surrogate key for grain uniqueness (hotel_id|reservation_id|business_date)"
+        tests:
+          - unique
+          - not_null
+      - name: hotel_id
+        description: "FK to dim_property"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_property')
+              field: hotel_id
+      - name: reservation_id
+        description: "Reservation identifier from stg_reservations"
+        tests:
+          - not_null
+      - name: business_date
+        description: "Stay date (one row per night of stay)"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_day
+      - name: profile_id
+        description: "FK to dim_guest_snapshot (guest profile)"
+        tests:
+          - not_null
+      - name: rate_plan_code
+        description: "Rate plan code (part of composite FK to dim_rate)"
+        tests:
+          - not_null
+      - name: market_code
+        description: "Market code (part of composite FK to dim_rate)"
+      - name: source_of_business
+        description: "Source of business code (part of composite FK to dim_rate)"
+      - name: room_type
+        description: "Room type from reservation"
+      - name: night_amount
+        description: "Per-night revenue allocation (total_amount / night_count) - estimate pending financials feature"
+
+# Composite FK test for dim_rate - requires custom test or dbt_utils
+# Since dbt_utils is not available, we note the composite FK requirement here
+# The combination (rate_plan_code, market_code, source_of_business) should exist in dim_rate

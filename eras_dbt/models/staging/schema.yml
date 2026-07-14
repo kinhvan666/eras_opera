@@ -7,3 +7,19 @@ models:
         tests:
           - unique
           - not_null
+      - name: hotel_id
+        description: "OPERA hotel/property code (raw_data->>'hotelId'). Conforms dim_property."
+      - name: guest_city
+        description: "Guest address city (reservationGuest.address.cityName)."
+      - name: guest_postal_code
+        description: "Guest address postal code (reservationGuest.address.postalCode)."
+      - name: guest_state
+        description: "Guest address state/region (reservationGuest.address.state)."
+      - name: guest_country_code
+        description: "Guest address country code (reservationGuest.address.country.code)."
+      - name: rate_plan_code
+        description: "Rate plan code for the stay (roomStay.ratePlanCode). Feeds dim_rate."
+      - name: market_code
+        description: "Market segment code (roomStay.marketCode). Feeds dim_rate."
+      - name: source_of_business
+        description: "Source of business (roomStay.sourceOfBusiness). Feeds dim_rate."

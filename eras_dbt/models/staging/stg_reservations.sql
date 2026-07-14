@@ -15,7 +15,15 @@ staged as (
         raw_data->'reservationGuest'->>'givenName' as guest_first_name,
         raw_data->'reservationGuest'->>'surname' as guest_last_name,
         raw_data->'roomStay'->>'roomType' as room_type,
-        raw_data->'roomStay'->'rateAmount'->>'amount' as total_amount
+        raw_data->'roomStay'->'rateAmount'->>'amount' as total_amount,
+        raw_data->>'hotelId' as hotel_id,
+        raw_data->'reservationGuest'->'address'->>'cityName' as guest_city,
+        raw_data->'reservationGuest'->'address'->>'postalCode' as guest_postal_code,
+        raw_data->'reservationGuest'->'address'->>'state' as guest_state,
+        raw_data->'reservationGuest'->'address'->'country'->>'code' as guest_country_code,
+        raw_data->'roomStay'->>'ratePlanCode' as rate_plan_code,
+        raw_data->'roomStay'->>'marketCode' as market_code,
+        raw_data->'roomStay'->>'sourceOfBusiness' as source_of_business
     from source
 )
 
