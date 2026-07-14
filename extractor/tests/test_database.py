@@ -13,5 +13,5 @@ def test_database_connection_failure(monkeypatch):
 
     monkeypatch.setattr(psycopg2, "connect", mock_connect)
 
-    with pytest.raises(DatabaseConnectionError, match="Database connection failed"):
+    with pytest.raises(DatabaseConnectionError, match="Could not connect to database"):
         Database()

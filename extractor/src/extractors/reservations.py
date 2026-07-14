@@ -1,10 +1,24 @@
-from src.client import APIClient
-from src.models import Reservation
+# extractor/src/extractors/reservations.py
+from typing import List
+from ..client import BaseOperaClient
+from ..models import Reservation
 
 class ReservationExtractor:
-    def __init__(self):
-        self.client = APIClient()
+    def __init__(self, client: BaseOperaClient):
+        self.client = client
 
-    def extract(self):
-        data = self.client.fetch_data("rsv/v1/reservations")
-        return [Reservation(**item) for item in data]
+    async def fetch_recent_reservations(self) -> List[dict]:
+        """Fetches reservations created in the last day."""
+        # The endpoint and params need to be confirmed from the OPERA Cloud API documentation.
+        # Example endpoint and params:
+        endpoint = "/res/v1/hotels/YOUR_HOTEL/reservations"
+        params = {
+            "query": "createDate=ge:$(SYSDATE-1)",
+            "limit": 100
+        }
+
+        raw_reservations = await self.client.fetch_all(endpoint=endpoint, params=params)
+
+        # For this phase, we return raw dicts. Pydantic validation can be added later.
+        # validated_reservations = [Reservation.model_validate(res) for res in raw_reservations]
+        return raw_reservations

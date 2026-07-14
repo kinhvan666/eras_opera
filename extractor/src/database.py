@@ -1,28 +1,45 @@
+# extractor/src/database.py
 import psycopg2
-from src.config import settings
+import psycopg2.extras
+import json
+from .config import settings
 
 class DatabaseConnectionError(Exception):
-    """Raised when database connection fails."""
+    """Custom exception for database connection errors."""
     pass
 
 class Database:
     def __init__(self):
         try:
-            self.conn = psycopg2.connect(settings.DATABASE_URL)
-            self._create_table()
-        except Exception as e:
-            raise DatabaseConnectionError(f"Database connection failed: {e}")
+            self.conn = psycopg2.connect(settings.database_url)
+        except psycopg2.OperationalError as e:
+            raise DatabaseConnectionError(f"Could not connect to database: {e}") from e
 
-    def _create_table(self):
+    def setup(self):
+        """Creates the necessary schema and tables."""
         with self.conn.cursor() as cur:
-            cur.execute("CREATE TABLE IF NOT EXISTS reservations (id TEXT PRIMARY KEY, hotel_id TEXT, guest_name TEXT, room_number TEXT)")
-        self.conn.commit()
+            cur.execute("CREATE SCHEMA IF NOT EXISTS raw;")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS raw.booking_core_reservations (
+                    id SERIAL PRIMARY KEY,
+                    extracted_at TIMESTAMPTZ DEFAULT NOW(),
+                    raw_data JSONB NOT NULL
+                );
+            """)
+            self.conn.commit()
 
-    def save_reservations(self, reservations):
+    def insert_raw_data(self, data: list[dict]):
+        """Inserts a list of raw JSON objects into the database."""
+        if not data:
+            return
+
         with self.conn.cursor() as cur:
-            for res in reservations:
-                cur.execute("INSERT INTO reservations (id, hotel_id, guest_name, room_number) VALUES (%s, %s, %s, %s) ON CONFLICT(id) DO UPDATE SET hotel_id=EXCLUDED.hotel_id, guest_name=EXCLUDED.guest_name, room_number=EXCLUDED.room_number", 
-        self.conn.commit()
+            psycopg2.extras.execute_values(
+                cur,
+                "INSERT INTO raw.booking_core_reservations (raw_data) VALUES %s",
+                [(json.dumps(item),) for item in data]
+            )
+            self.conn.commit()
 
     def close(self):
         self.conn.close()
