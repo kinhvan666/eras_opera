@@ -166,7 +166,7 @@ function groupOf(relPath) {
   console.log('groupOf input:', relPath);
   // process/context/{group}/all-{group}.md -> {group}; root all-context.md -> null
   const rest = relPath.replace(/^process\/context\//, "");
-  const parts = rest.split(path.sep);
+  const parts = rest.split('/');
   console.log('groupOf parts:', parts);
   return parts.length > 1 ? parts[0] : null;
 }

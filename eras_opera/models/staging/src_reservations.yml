@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: opera_cloud
+    schema: raw
+    tables:
+      - name: reservations

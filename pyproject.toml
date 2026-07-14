@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "eras-opera"
+version = "0.1.0"
+description = "Data extraction and processing for Eras Opera project"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.111.0"
+uvicorn = {extras = ["standard"], version = "^0.30.1"}
+pydantic-settings = "^2.3.4"
+requests = "^2.32.3"
+psycopg2-binary = "^2.9.9"
+sqlalchemy = "^2.0.31"
+pandas = "^2.2.2"
+openpyxl = "^3.1.4"
+dbt-core = "^1.8.2"
+dbt-postgres = "^1.8.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
+httpx = "^0.27.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,14 @@
+name: 'eras_dbt'
+version: '1.0.0'
+config-version: 2
+profile: 'eras_dbt'
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+analysis-paths: ["analysis"]
+macro-paths: ["macros"]
+
+models:
+  eras_dbt:
+    staging:
+      +materialized: view

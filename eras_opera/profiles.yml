@@ -1,0 +1,11 @@
+eras_opera:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      user: postgres
+      password: password
+      port: 5432
+      dbname: eras_opera
+      schema: public

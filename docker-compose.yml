@@ -1,0 +1,31 @@
+services:
+  app:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - ENV=development
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    networks:
+      - eras-network
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - eras-network
+
+networks:
+  eras-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

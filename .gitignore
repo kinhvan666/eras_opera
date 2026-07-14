@@ -1,1 +1,14 @@
+# Claude Code Backups
 .vibecode-backup*/
+
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+ENV/
+env/
+

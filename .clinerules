@@ -1,0 +1,68 @@
+# Cline Rules - VibeCode Pro Max Kit
+
+You are operating within the VibeCode Pro Max agentic harness. This workspace is configured with the RIPER-5 Spec-Driven Development System. You MUST strictly adhere to the following rules, roles, and development protocols.
+
+---
+
+## 1. RIPER-5 Spec-Driven Development System
+
+This repository enforces a strict, phase-locked development workflow. You must execute one phase at a time and obtain explicit user approval before transitioning to implementation.
+
+### Mode-Locked Responses
+Every response you generate MUST begin with the current mode tag: `[MODE: MODE_NAME]`. Valid mode names are:
+- `RESEARCH` - Information gathering and codebase investigation.
+- `SPEC` - Product requirements and criteria discovery.
+- `INNOVATE` - Brainstorming and architectural design discussions.
+- `PLAN` - Drafting detailed implementation plans.
+- `VALIDATE` - Verification criteria checklist writing.
+- `EXECUTE` - Implementing changes (only after plan approval).
+- `UPDATE PROCESS` - Archiving plans, updating context, and rule maintenance.
+- `FAST MODE` - Consolidated workflow (RESEARCH -> INNOVATE -> PLAN -> EXECUTE with a confirmation pause before execution).
+- `DEBUG` - Root-cause analysis and bug fixing.
+- `QUICK FIX` - Low-risk minor adjustments (bypasses plan phase).
+
+---
+
+## 2. Using Agent Personas
+
+When performing work in a specific mode, you MUST adopt the precise rules and persona of the corresponding agent defined in the project:
+1. **Locate the agent file**: Read the corresponding agent markdown file under `.claude/agents/` (e.g., `.claude/agents/vc-research-agent.md` for `RESEARCH` mode, `.claude/agents/vc-plan-agent.md` for `PLAN` mode).
+2. **Adopt the Rules**: Merge that agent's system instructions, tool constraints, and workflow requirements into your active instructions.
+
+---
+
+## 3. Workflow Skills Discovery
+
+You have access to reusable workflow skills stored in `.claude/skills/` (which is symlinked to `.agents/skills/`). 
+1. **Triggering a Skill**: When the user requests a workflow (e.g., "setup project", "generate plan", "check context", "run security audit"), scan the subdirectories of `.claude/skills/` to find a matching skill by keyword or name.
+2. **Executing a Skill**: Read the `SKILL.md` file inside that skill's subdirectory (e.g., `.claude/skills/vc-generate-plan/SKILL.md`) and strictly follow the workflow steps and validation rules described.
+3. **Running Skill Scripts**: If the skill defines a validation script in `scripts/`, run it via the terminal using the command specified in its `SKILL.md`.
+
+---
+
+## 4. Context Routing & Maintenance
+
+To avoid "context rot" and maintain proper project memory, follow these context rules:
+- **Mandatory Bootstrap Check**: Before any substantial task, check if `process/context/all-context.md` exists. If not, the harness is not bootstrapped yet. You MUST ask the user to run the `vc-setup` skill first.
+- **Before Any Task**: Run `find process/context/ -type f` and `find process/development-protocols/ -type f` to discover active context/protocol files.
+- **Context Routing**: Read `process/context/all-context.md` and follow its routing tables to load the specific context files relevant to your task. Never hardcode file paths.
+- **Updating Context**: Update context files whenever project configuration or architecture changes, ensuring all-context routers remain the source of truth.
+
+---
+
+## 5. Directory Structure & Organization
+
+Keep all process files organized in the following locations:
+- `process/context/` - System architecture, testing quickstart, environment configuration, and codebase guidelines.
+- `process/development-protocols/` - RIPER-5 shared development protocols.
+- `process/general-plans/active/` - Current active general plans.
+- `process/features/<feature-name>/active/` - Current active plans for specific feature areas.
+- **Colocation Rule**: All artifacts produced for a plan (plans, specs, reports, and references) must live inside the specific task folder (`active/{slug}_{date}/`) containing the plan itself. Do not use legacy sibling `reports/` or `references/` directories.
+
+---
+
+## 6. Implementation & Verification Standards
+
+- **Code Changes**: Do NOT write code in `EXECUTE` mode without an approved plan in `process/general-plans/active/` or `process/features/*/active/`.
+- **Testing Gate**: Always consult `process/context/tests/all-tests.md` to run the relevant tests and verify your changes before completing a task.
+- **Autopilot / Subagent Status**: If you spawn sub-tasks or sub-sessions, track and report status codes (`DONE`, `DONE_WITH_CONCERNS`, `BLOCKED`, `NEEDS_CONTEXT`) according to `process/development-protocols/orchestration.md`.

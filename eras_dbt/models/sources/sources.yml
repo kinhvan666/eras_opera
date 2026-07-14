@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: raw
+    database: erg_opera_data
+    schema: raw
+    tables:
+      - name: booking_core_reservations
