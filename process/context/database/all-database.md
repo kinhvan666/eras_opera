@@ -61,7 +61,7 @@ decisions and the matching OPERA spec in `docs/` for source field definitions.
    per source entity, `stg_` prefix) → `dimensional` (`dim_` / `fct_`).
 2. **Grain first:** every fact table declares its grain in one sentence before columns are chosen.
 3. **Conformed dimensions:** shared dimensions (`dim_property`/hotel, `dim_date`, `dim_guest`,
-   `dim_room_type`, `dim_rate_code`) are defined once and reused across booking-core, financials,
+   `dim_room_type`, `dim_rate`) are defined once and reused across booking-core, financials,
    operations, and crm-profiles — never re-modeled per feature.
 4. **SCD:** guest and configuration attributes that change over time use an explicit SCD type
    (default Type 2 for audit-relevant history); document the choice per dimension.
@@ -71,7 +71,7 @@ decisions and the matching OPERA spec in `docs/` for source field definitions.
 
 - **Facts:** `fct_reservation` (grain: reservation-night or reservation, TBD), `fct_folio_transaction`
   (cashiering), `fct_ar_transaction`, `fct_housekeeping_task`, `fct_room_inventory_daily`.
-- **Conformed dimensions:** `dim_date`, `dim_property`, `dim_guest`, `dim_room_type`, `dim_rate_code`,
+- **Conformed dimensions:** `dim_date`, `dim_property`, `dim_guest`, `dim_room_type`, `dim_rate`,
   `dim_room`, `dim_market_source`, `dim_channel`.
 
 These are starting hypotheses — confirm grain and conformance during RESEARCH/PLAN against the OPERA
