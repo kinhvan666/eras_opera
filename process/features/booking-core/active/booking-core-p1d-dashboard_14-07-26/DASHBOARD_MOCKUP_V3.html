@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ErasOpera - Booking Core Dashboard V1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --color-gray-50: #F8FAFC; --color-gray-100: #F1F5F9; --color-gray-200: #E2E8F0; --color-gray-300: #CBD5E1; --color-gray-400: #94A3B8;
+            --color-gray-500: #64748B; --color-gray-600: #475569; --color-gray-700: #334155; --color-gray-800: #1E293B; --color-gray-900: #0F172A;
+            --color-blue-50: #EFF6FF; --color-blue-100: #DBEAFE; --color-blue-200: #BFDBFE; --color-blue-300: #93C5FD; --color-blue-400: #60A5FA;
+            --color-blue-500: #3B82F6; --color-blue-600: #2563EB; --color-blue-700: #1D4ED8; --color-blue-800: #1E40AF; --color-blue-900: #1E3A8A;
+            --color-green-500: #22C55E; --color-green-600: #16A34A; --color-green-100: #DCFCE7;
+            --color-yellow-500: #EAB308; --color-yellow-600: #CA8A04; --color-yellow-100: #FEF3C7;
+            --color-red-500: #EF4444; --color-red-600: #DC2626; --color-red-100: #FEF2F2;
+            --space-0: 0; --space-px: 1px; --space-1: 0.25rem; --space-1-5: 0.375rem; --space-2: 0.5rem; --space-2-5: 0.625rem; --space-3: 0.75rem; --space-3-5: 0.875rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+            --font-size-xs: 0.75rem; --font-size-sm: 0.875rem; --font-size-base: 1rem; --font-size-lg: 1.125rem; --font-size-xl: 1.25rem; --font-size-2xl: 1.5rem; --font-size-3xl: 1.875rem; --font-size-4xl: 2.25rem; --font-size-5xl: 3rem;
+            --font-weight-normal: 400; --font-weight-medium: 500; --font-weight-semibold: 600; --font-weight-bold: 700;
+            --radius-sm: 0.25rem; --radius-default: 0.375rem; --radius-md: 0.5rem; --radius-lg: 0.75rem; --radius-xl: 1rem; --radius-full: 9999px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05); --shadow-default: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --color-background: #F8FAFC; --color-foreground: #0F172A; --color-card: #FFFFFF; --color-card-foreground: #0F172A; --color-primary: #1E40AF; --color-primary-hover: #1E3A8A; --color-primary-subtle: #DBEAFE; --color-primary-border: #BFDBFE; --color-secondary: #F1F5F9; --color-secondary-hover: #E2E8F0; --color-secondary-foreground: #0F172A; --color-muted: #F1F5F9; --color-muted-foreground: #64748B;
+            --color-success: #16A34A; --color-success-subtle: #DCFCE7; --color-success-border: #86EFAC;
+            --color-warning: #CA8A04; --color-warning-subtle: #FEF3C7; --color-warning-border: #FCD34D;
+            --color-error: #DC2626; --color-error-subtle: #FEF2F2; --color-error-border: #FCA5A5;
+            --color-info: #2563EB; --color-info-subtle: #DBEAFE; --color-info-border: #93C5FD;
+            --color-border: #E2E8F0; --color-input: #E2E8F0; --color-ring: #2563EB; --color-muted-foreground: #64748B;
+            --kpi-profit: #16A34A; --kpi-profit-bg: #DCFCE7; --kpi-profit-border: #86EFAC;
+            --kpi-loss: #DC2626; --kpi-loss-bg: #FEF2F2; --kpi-loss-border: #FCA5A5;
+            --kpi-neutral: #1E40AF; --kpi-neutral-bg: #DBEAFE; --kpi-neutral-border: #93C5FD;
+            --kpi-warning: #CA8A04; --kpi-warning-bg: #FEF3C7; --kpi-warning-border: #FCD34D;
+            --card-bg: #FFFFFF; --card-border: #E2E8F0; --card-radius: 0.75rem; --card-padding: 1.5rem; --card-gap: 1.5rem;
+            --button-radius: 0.5rem; --button-padding-x: 1rem; --button-padding-y: 0.5rem; --button-font-size: 0.875rem; --button-font-weight: 500;
+            --input-radius: 0.5rem; --input-padding-x: 0.75rem; --input-padding-y: 0.5rem; --input-font-size: 0.875rem;
+            --badge-radius: 9999px; --badge-padding-x: 0.625rem; --badge-padding-y: 0.125rem; --badge-font-size: 0.625rem; --badge-font-weight: 600;
+            --table-header-bg: #F8FAFC; --table-header-fg: #64748B; --table-row-hover: #F8FAFC; --table-cell-padding-x: 1rem; --table-cell-padding-y: 0.75rem;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05); --shadow-default: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --duration-fast: 150ms; --duration-normal: 200ms; --duration-slow: 300ms;
+            --kpi-profit: #16A34A; --kpi-profit-bg: #DCFCE7; --kpi-profit-border: #86EFAC;
+            --kpi-loss: #DC2626; --kpi-loss-bg: #FEF2F2; --kpi-loss-border: #FCA5A5;
+            --kpi-neutral: #1E40AF; --kpi-neutral-bg: #DBEAFE; --kpi-neutral-border: #93C5FD;
+            --kpi-warning: #CA8A04; --kpi-warning-bg: #FEF3C7; --kpi-warning-border: #FCD34D;
+            --card-bg: #FFFFFF; --card-border: #E2E8F0; --card-radius: 0.75rem; --card-padding: 1.5rem; --card-gap: 1.5rem;
+            --button-radius: 0.5rem; --button-padding-x: 1rem; --button-padding-y: 0.5rem; --button-font-size: 0.875rem; --button-font-weight: 500;
+            --input-radius: 0.5rem; --input-padding-x: 0.75rem; --input-padding-y: 0.5rem; --input-font-size: 0.875rem;
+            --badge-radius: 9999px; --badge-padding-x: 0.625rem; --badge-padding-y: 0.125rem; --badge-font-size: 0.625rem; --badge-font-weight: 600;
+            --table-header-bg: #F8FAFC; --table-header-fg: #64748B; --table-row-hover: #F8FAFC; --table-cell-padding-x: 1rem; --table-cell-padding-y: 0.75rem;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05); --shadow-default: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --duration-fast: 150ms; --duration-normal: 200ms; --duration-slow: 300ms;
+            --kpi-profit: #16A34A; --kpi-profit-bg: #DCFCE7; --kpi-profit-border: #86EFAC;
+            --kpi-loss: #DC2626; --kpi-loss-bg: #FEF2F2; --kpi-loss-border: #FCA5A5;
+            --kpi-neutral: #1E40AF; --kpi-neutral-bg: #DBEAFE; --kpi-neutral-border: #93C5FD;
+            --kpi-warning: #CA8A04; --kpi-warning-bg: #FEF3C7; --kpi-warning-border: #FCD34D;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+        html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        body { font-family: 'Fira Sans', system-ui, -apple-system, sans-serif; font-size: 1rem; line-height: 1.5; color: #0F172A; background-color: #F8FAFC; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .font-mono { font-family: 'Fira Code', 'SF Mono', 'Monaco', monospace; }
+        *:focus-visible { outline: none; ring: 2px solid #2563EB; ring-offset: 2px; ring-offset-color: #F8FAFC; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+        ::selection { background: #DBEAFE; color: #1E40AF; }
+        .card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: box-shadow 150ms, transform 150ms; }
+        .card:hover { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); transform: translateY(-1px); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; font-family: inherit; transition: all 150ms; border: 1px solid transparent; cursor: pointer; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: #1E40AF; color: #FFFFFF; border-color: transparent; } .btn-primary:hover:not(:disabled) { background: #1E3A8A; } .btn-primary:active:not(:disabled) { background: #172554; }
+        .btn-secondary { background: #F1F5F9; color: #0F172A; border-color: #E2E8F0; } .btn-secondary:hover:not(:disabled) { background: #E2E8F0; }
+        .btn-ghost { background: transparent; color: #0F172A; border-color: transparent; } .btn-ghost:hover:not(:disabled) { background: #F1F5F9; }
+        .input { width: 100%; border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.875rem; font-family: inherit; color: #0F172A; background: #FFFFFF; border: 1px solid #E2E8F0; transition: border-color 150ms, box-shadow 150ms; }
+        .input:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 2px #DBEAFE; } .input::placeholder { color: #64748B; } .input:disabled { opacity: 0.5; cursor: not-allowed; }
+        .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 0.125rem 0.625rem; font-size: 0.625rem; font-weight: 600; line-height: 1; white-space: nowrap; }
+        .badge-est { background: #FEF3C7; color: #CA8A04; border: 1px solid #FCD34D; font-size: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .table-container { overflow-x: auto; }
+        .table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .table th { background: #F8FAFC; color: #64748B; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #E2E8F0; }
+        .table td { padding: 0.75rem 1rem; border-bottom: 1px solid #E2E8F0; color: #0F172A; }
+        .table tr:hover td { background: #F8FAFC; }
+        .table tr:last-child td { border-bottom: none; }
+        .table .font-mono { font-variant-numeric: tabular-nums; }
+        .chart-container { position: relative; height: 100%; min-height: 280px; }
+        .kpi-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.25rem; transition: box-shadow 150ms, transform 150ms; }
+        .kpi-card:hover { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); transform: translateY(-2px); }
+        .tab-btn { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: #64748B; border-bottom: 2px solid transparent; transition: color 150ms, border-color 150ms; background: transparent; border: none; cursor: pointer; }
+        .tab-btn:hover { color: #0F172A; } .tab-btn.active { color: #1E40AF; border-bottom-color: #1E40AF; }
+        .tab-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #1E40AF; border-radius: 4px; }
+        .filter-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.75rem; font-size: 0.8125rem; font-weight: 500; color: #64748B; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 6px; transition: all 150ms; }
+        .filter-btn:hover, .filter-btn:focus { border-color: #1E40AF; color: #1E40AF; } .filter-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #DBEAFE; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+        @media (min-width: 768px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+        @media (min-width: 1024px) { .kpi-grid { grid-template-columns: repeat(8, 1fr); } }
+        .chart-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+        .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .chart-title { font-size: 0.875rem; font-weight: 600; color: #0F172A; }
+        .chart-subtitle { font-size: 0.75rem; color: #64748B; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeInUp 0.4s ease-out forwards; }
+        .delay-1 { animation-delay: 50ms; } .delay-2 { animation-delay: 100ms; } .delay-3 { animation-delay: 150ms; } .delay-4 { animation-delay: 200ms; } .delay-5 { animation-delay: 250ms; } .delay-6 { animation-delay: 300ms; } .delay-7 { animation-delay: 350ms; } .delay-8 { animation-delay: 400ms; }
+        .scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; } .scrollbar-thin::-webkit-scrollbar-track { background: transparent; } .scrollbar-thin::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; } .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm border-b border-[var(--color-border)]">
+        <div class="max-w-full mx-auto px-4 py-3">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 001 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold font-mono text-[var(--color-foreground)]">ErasOpera</h1>
+                        <p class="text-xs text-[var(--color-muted-foreground)]">Booking Core • V1 Dashboard</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-medium text-[var(--color-muted-foreground)]">Period</label>
+                        <div class="flex items-center gap-1 bg-[var(--color-muted)] border border-[var(--color-border)] rounded-lg px-3 py-1.5">
+                            <input type="date" id="dateFrom" class="bg-transparent border-none text-sm font-mono text-[var(--color-foreground)] focus:outline-none w-32" value="2026-01-01">
+                            <span class="text-[var(--color-muted-foreground)] mx-1">–</span>
+                            <input type="date" id="dateTo" class="bg-transparent border-none text-sm font-mono text-[var(--color-foreground)] focus:outline-none w-32" value="2026-01-31">
+                        </div>
+                    </div>
+                    <div class="w-px h-6 bg-[var(--color-border)] mx-1"></div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-medium text-[var(--color-muted-foreground)]">Property</label>
+                        <select id="propertySelect" class="filter-btn bg-white dark:bg-slate-800 text-sm font-mono px-3 py-1.5" style="min-width: 220px;">
+                            <option value="all">All Properties</option>
+                            <option value="79017" selected>Costamigo Phan Thiet (79017)</option>
+                        </select>
+                    </div>
+                    <div class="w-px h-6 bg-[var(--color-border)] mx-1"></div>
+                    <button id="refreshBtn" class="filter-btn flex items-center gap-1.5 px-4" title="Refresh data" aria-label="Refresh data">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-full mx-auto px-4 py-5">
+        <section aria-label="Key Performance Indicators" class="mb-6">
+            <div class="kpi-grid" id="kpiRow"></div>
+        </section>
+        <div class="mb-4">
+            <nav class="flex gap-1 overflow-x-auto scrollbar-thin pb-2" role="tablist" aria-label="Dashboard sections">
+                <button class="tab-btn active whitespace-nowrap" role="tab" aria-selected="true" data-tab="trends"><svg class="w-4 h-4 inline mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>Trends</button>
+                <button class="tab-btn whitespace-nowrap" role="tab" aria-selected="false" data-tab="segments"><svg class="w-4 h-4 inline mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 01-2-2"></path></svg>Segments</button>
+                <button class="tab-btn whitespace-nowrap" role="tab" aria-selected="false" data-tab="pacing"><svg class="w-4 h-4 inline mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Pacing</button>
+            </nav>
+        </div>
+        <div id="tabPanels">
+            <div role="tabpanel" id="panel-trends" class="tab-panel space-y-4" aria-labelledby="tab-trends">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="chart-card p-4 animate-in"><div class="chart-header"><h3 class="chart-title">Room Nights & Revenue</h3><span class="chart-subtitle">Daily</span></div><div class="chart-container"><canvas id="chartRoomNightsRevenue"></canvas></div></div>
+                    <div class="chart-card p-4 animate-in delay-1"><div class="chart-header"><h3 class="chart-title">ADR & RevPAR Trend (est.)</h3><span class="chart-subtitle">Daily</span></div><div class="chart-container"><canvas id="chartAdrRevpar"></canvas></div></div>
+                    <div class="chart-card p-4 animate-in delay-2"><div class="chart-header"><h3 class="chart-title">Average Lead Time</h3><span class="chart-subtitle">Daily avg (days)</span></div><div class="chart-container"><canvas id="chartLeadTime"></canvas></div></div>
+                    <div class="chart-card p-4 animate-in delay-3"><div class="chart-header"><h3 class="chart-title">Cancellation Rate</h3><span class="chart-subtitle">Daily %</span></div><div class="chart-container"><canvas id="chartCancellation"></canvas></div></div>
+                </div>
+            </div>
+            <div role="tabpanel" id="panel-segments" class="tab-panel hidden space-y-4" aria-labelledby="tab-segments">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="chart-card p-4 animate-in"><h3 class="chart-title mb-3">Revenue by Market Code</h3><div class="chart-container" style="height: 320px;"><canvas id="chartMarketCode"></canvas></div></div>
+                    <div class="chart-card p-4 animate-in delay-1"><h3 class="chart-title mb-3">Revenue by Rate Plan</h3><div class="chart-container" style="height: 320px;"><canvas id="chartRatePlan"></canvas></div></div>
+                    <div class="chart-card p-4 animate-in delay-2"><h3 class="chart-title mb-3">Revenue by Source of Business</h3><div class="chart-container" style="height: 320px;"><canvas id="chartSourceBusiness"></canvas></div></div>
+                    <div class="chart-card p-4 animate-in delay-3"><h3 class="chart-title mb-3">Room Nights by Room Type</h3><div class="chart-container" style="height: 320px;"><canvas id="chartRoomType"></canvas></div></div>
+                </div>
+                <div class="chart-card p-4 overflow-x-auto animate-in delay-4"><h3 class="chart-title mb-3">Reservations by Country</h3><div class="table-container"><table class="table"><thead><tr><th>Country</th><th class="text-right">Reservations</th><th class="text-right">Room Nights</th><th class="text-right">Avg Revenue</th><th class="text-right">Canc. Rate</th></tr></thead><tbody class="text-[var(--color-foreground)] divide-y divide-[var(--color-border)]" id="countryTableBody"></tbody></table></div></div>
+            </div>
+            <div role="tabpanel" id="panel-pacing" class="tab-panel hidden space-y-4" aria-labelledby="tab-pacing">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="chart-card p-4 animate-in"><h3 class="chart-title mb-3">Booking Pace: Current vs Prior Year vs Target</h3><div class="chart-container" style="height: 320px;"><canvas id="chartPacing"></canvas></div></div>
+                    <div class="chart-card p-4 animate-in delay-1"><h3 class="chart-title mb-3">Weekly Pickup: New Bookings vs Cancellations</h3><div class="chart-container" style="height: 320px;"><canvas id="chartPickup"></canvas></div></div>
+                    <div class="chart-card p-4 animate-in delay-2"><h3 class="chart-title mb-3">Lead Time Distribution</h3><div class="chart-container" style="height: 320px;"><canvas id="chartLeadTimeDist"></canvas></div></div>
+                    <div class="chart-card p-4 animate-in delay-3"><h3 class="chart-title mb-3">Cancellation Funnel</h3><div class="chart-container" style="height: 320px;"><canvas id="chartCancellationFunnel"></canvas></div></div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-6 pt-4 border-t border-[var(--color-border)] flex flex-wrap items-center gap-4 text-xs text-[var(--color-muted-foreground)]">
+            <span class="flex items-center gap-1.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded badge-est">EST</span><span>Financial KPIs are estimates based on rate plan data. Actuals require Financials feature integration.</span></span>
+            <span class="flex items-center gap-1.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[var(--kpi-warning-bg)] text-[var(--kpi-warning)] font-medium">MANUAL</span><span>Occupancy & RevPAR use manual room count (250). Update in dim_property table.</span></span>
+            <span class="ml-auto">Data refreshed: <span id="lastRefresh" class="font-mono">--</span></span>
+        </div>
+    </main>
+
+    <script>
+        const kpiData = [
+            { key: 'totalRevenue', label: 'Total Revenue (est.)', value: '1,234,567,890', unit: 'VND', trend: '+8.7%', trendUp: true, badge: 'EST', color: 'profit' },
+            { key: 'adr', label: 'Avg Daily Rate (est.)', value: '2,345,678', unit: 'VND', trend: '+5.3%', trendUp: true, badge: 'EST', color: 'profit' },
+            { key: 'revpar', label: 'RevPAR (est.)', value: '1,778,989', unit: 'VND', trend: '+3.1%', trendUp: true, badge: 'EST', color: 'profit' },
+            { key: 'occupancy', label: 'Occupancy (est.)', value: '75.8', unit: '%', trend: '-2.1%', trendUp: false, badge: 'EST', color: 'neutral' },
+            { key: 'reservations', label: 'Reservations', value: '100', unit: '', trend: '-1.2%', trendUp: false, badge: null, color: 'neutral' },
+            { key: 'roomNights', label: 'Room Nights', value: '118', unit: '', trend: '+4.1%', trendUp: true, badge: null, color: 'neutral' },
+            { key: 'leadTime', label: 'Avg Lead Time', value: '21.5', unit: 'days', trend: '-1.2d', trendUp: true, badge: null, color: 'neutral' },
+            { key: 'cancellation', label: 'Cancellation Rate', value: '8.5', unit: '%', trend: '+0.3%', trendUp: false, badge: null, color: 'loss' }
+        ];
+        const colorMap = { profit: { bg: '#DCFCE7', text: '#16A34A', trendUp: '#16A34A', trendDown: '#DC2626', border: '#86EFAC' }, loss: { bg: '#FEF2F2', text: '#DC2626', trendUp: '#16A34A', trendDown: '#DC2626', border: '#FCA5A5' }, neutral: { bg: '#DBEAFE', text: '#1E40AF', trendUp: '#16A34A', trendDown: '#DC2626', border: '#93C5FD' }, warning: { bg: '#FEF3C7', text: '#CA8A04' } };
+        const chartColors = { profit: '#16A34A', loss: '#DC2626', neutral: '#1E40AF', profitBg: 'rgba(22, 163, 74, 0.12)', lossBg: 'rgba(220, 38, 38, 0.12)', neutralBg: 'rgba(30, 64, 175, 0.12)', warningBg: 'rgba(202, 138, 4, 0.12)', warning: '#CA8A04', grid: '#E2E8F0', text: '#64748B' };
+        const gradientFn = (ctx, color) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, color + '33'); g.addColorStop(1, color + '00'); return g; };
+        const dates = ['Jan 1', 'Jan 5', 'Jan 9', 'Jan 13', 'Jan 17', 'Jan 21', 'Jan 25', 'Jan 29'];
+        const weeks = ['W-12','W-11','W-10','W-9','W-8','W-7','W-6','W-5','W-4','W-3','W-2','W-1'];
+        const paceLabels = ['D-90','D-75','D-60','D-45','D-30','D-15','D-7','D-0'];
+        const leadBins = ['0-3d','4-7d','8-14d','15-30d','31-60d','61-90d','90+d'];
+
+        Chart.defaults.font.family = "'Fira Sans', sans-serif";
+        Chart.defaults.color = chartColors.text;
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+        Chart.defaults.plugins.legend.labels.padding = 16;
+        Chart.defaults.plugins.legend.labels.font.size = 11;
+        Chart.defaults.scales.x.grid.display = false;
+        Chart.defaults.scales.x.ticks.color = chartColors.text;
+        Chart.defaults.scales.x.ticks.font.size = 10;
+        Chart.defaults.scales.y.grid.color = chartColors.grid;
+        Chart.defaults.scales.y.ticks.color = chartColors.text;
+        Chart.defaults.scales.y.ticks.font.size = 10;
+        Chart.defaults.interaction.mode = 'index';
+        Chart.defaults.interaction.intersect = false;
+
+        function renderKPIs() {
+            const container = document.getElementById('kpiRow');
+            container.innerHTML = kpiData.map((kpi, i) => {
+                const c = colorMap[kpi.color];
+                const trendIcon = kpi.trendUp ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>' : '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>';
+                return `<article class="kpi-card animate-in" style="animation-delay: ${i * 50}ms; background:${c.bg}; border-color:${c.border};"><div class="flex items-start justify-between mb-2"><p class="text-xs font-medium text-[var(--color-muted-foreground)] leading-tight">${kpi.label}</p>${kpi.badge ? `<span class="badge-est">${kpi.badge}</span>` : ''}</div><div class="flex items-baseline gap-1 mb-1"><span class="font-mono text-2xl lg:text-3xl font-semibold" style="color:${c.text};">${kpi.value}</span>${kpi.unit ? `<span class="text-sm font-medium" style="color:${c.text}; opacity:0.8;">${kpi.unit}</span>` : ''}</div><div class="flex items-center gap-1.5"><span class="text-xs font-medium" style="color:${kpi.trendUp ? '#16A34A' : '#DC2626'};">${trendIcon}${kpi.trend}</span><span class="text-[10px] text-[var(--color-muted-foreground)]">vs prior period</span></div></article>`;
+            }).join('');
+        }
+
+        let chartsInitialized = { trends: false, segments: false, pacing: false };
+
+        function initChartsForTab(tabName) {
+            if (chartsInitialized[tabName]) return;
+            if (tabName === 'trends') initTrendsCharts();
+            else if (tabName === 'segments') initSegmentsCharts();
+            else if (tabName === 'pacing') initPacingCharts();
+            chartsInitialized[tabName] = true;
+        }
+
+        function initTrendsCharts() {
+            new Chart(document.getElementById('chartRoomNightsRevenue'), {
+                type: 'bar', data: { labels: dates, datasets: [
+                    { label: 'Room Nights', data: [8, 12, 6, 15, 9, 14, 11, 10], backgroundColor: (ctx) => gradientFn(ctx, chartColors.neutral), borderColor: chartColors.neutral, borderWidth: 1, borderRadius: 4, yAxisID: 'y' },
+                    { label: 'Revenue (M VND)', data: [95, 145, 72, 180, 110, 165, 130, 120], type: 'line', borderColor: chartColors.profit, backgroundColor: 'transparent', borderWidth: 2.5, fill: false, tension: 0.3, yAxisID: 'y1', pointRadius: 4, pointBackgroundColor: chartColors.profit, pointBorderWidth: 2, pointBorderColor: '#fff' }
+                ]}, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top' } }, scales: { x: { grid: { display: false } }, y: { type: 'linear', position: 'left', title: { display: true, text: 'Room Nights', color: chartColors.text }, grid: { color: chartColors.grid } }, y1: { type: 'linear', position: 'right', title: { display: true, text: 'Revenue (M VND)', color: chartColors.text }, grid: { drawOnChartArea: false } } } });
+
+            new Chart(document.getElementById('chartAdrRevpar'), { type: 'line', data: { labels: dates, datasets: [
+                { label: 'ADR (est.)', data: [2.1, 2.4, 2.2, 2.5, 2.3, 2.6, 2.4, 2.5], borderColor: chartColors.profit, backgroundColor: chartColors.profitBg, borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3 },
+                { label: 'RevPAR (est.)', data: [1.6, 1.8, 1.7, 1.9, 1.75, 2.0, 1.85, 1.9], borderColor: chartColors.neutral, backgroundColor: chartColors.neutralBg, borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3 }
+            ]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { x: { grid: { display: false } }, y: { title: { display: true, text: 'VND (Millions)', color: chartColors.text }, grid: { color: chartColors.grid }, ticks: { callback: v => v + 'M' } } } });
+
+            new Chart(document.getElementById('chartLeadTime'), { type: 'line', data: { labels: dates, datasets: [{ label: 'Avg Lead Time (days)', data: [24, 22, 25, 21, 23, 20, 22, 21.5], borderColor: chartColors.neutral, backgroundColor: chartColors.neutralBg, borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { title: { display: true, text: 'Days', color: chartColors.text }, grid: { color: chartColors.grid } } } });
+
+            new Chart(document.getElementById('chartCancellation'), { type: 'bar', data: { labels: dates, datasets: [{ label: 'Cancellation Rate (%)', data: [8, 9, 7, 10, 8, 9, 8.5, 8.5], backgroundColor: chartColors.lossBg, borderColor: chartColors.loss, borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { title: { display: true, text: '%', color: chartColors.text }, grid: { color: chartColors.grid }, ticks: { callback: v => v + '%' } } } });
+        }
+
+        function initSegmentsCharts() {
+            new Chart(document.getElementById('chartMarketCode'), { type: 'bar', data: { labels: ['CORP','TRA_HBD','TRA_FB','COM','LEI','GRP','NORA'], datasets: [{ label: 'Revenue (M VND)', data: [42, 35, 28, 22, 18, 15, 12], backgroundColor: chartColors.profitBg, borderColor: chartColors.profit, borderWidth: 1, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text, callback: v => v + 'M' } }, y: { grid: { display: false } } } });
+
+            new Chart(document.getElementById('chartRatePlan'), { type: 'bar', data: { labels: ['CORP','TRA_HBD','TRA_FB','COM','LEI','NORA'], datasets: [{ label: 'Revenue (M VND)', data: [40, 33, 25, 20, 15, 10], backgroundColor: chartColors.neutralBg, borderColor: chartColors.neutral, borderWidth: 1, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text, callback: v => v + 'M' } }, y: { grid: { display: false } } } });
+
+            new Chart(document.getElementById('chartSourceBusiness'), { type: 'bar', data: { labels: ['WEBSITE','CORP','COF','COG','SYS','TAF','OTH'], datasets: [{ label: 'Revenue (M VND)', data: [38, 32, 28, 22, 18, 14, 8], backgroundColor: chartColors.profitBg, borderColor: chartColors.profit, borderWidth: 1, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text, callback: v => v + 'M' } }, y: { grid: { display: false } } } });
+
+            new Chart(document.getElementById('chartRoomType'), { type: 'bar', data: { labels: ['3DP','VIL','STD','DLX','JRS','PRS'], datasets: [ { label: 'Active', data: [35, 28, 42, 18, 12, 8], backgroundColor: chartColors.profitBg, borderColor: chartColors.profit, borderWidth: 1 }, { label: 'Cancelled', data: [5, 3, 6, 2, 1, 1], backgroundColor: chartColors.lossBg, borderColor: chartColors.loss, borderWidth: 1 } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: chartColors.grid } } } });
+
+            renderCountryTable();
+        }
+
+        function initPacingCharts() {
+            new Chart(document.getElementById('chartPacing'), { type: 'line', data: { labels: paceLabels, datasets: [
+                { label: 'Current Year', data: [5, 12, 22, 38, 55, 72, 88, 100], borderColor: chartColors.neutral, backgroundColor: chartColors.neutralBg, borderWidth: 3, fill: true, tension: 0.4, pointRadius: 4 },
+                { label: 'Prior Year', data: [3, 10, 18, 32, 48, 65, 82, 95], borderColor: chartColors.profit, backgroundColor: chartColors.profitBg, borderWidth: 2, fill: true, tension: 0.4, pointRadius: 3, borderDash: [5, 5] },
+                { label: 'Target', data: [4, 11, 20, 35, 52, 70, 88, 105], borderColor: chartColors.warning, backgroundColor: 'transparent', borderWidth: 2, fill: false, tension: 0.4, pointRadius: 0, borderDash: [10, 5] }
+            ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } }, scales: { x: { grid: { display: false } }, y: { title: { display: true, text: 'Reservations', color: chartColors.text }, grid: { color: chartColors.grid } } } });
+
+            new Chart(document.getElementById('chartPickup'), { type: 'bar', data: { labels: weeks, datasets: [ { label: 'New Bookings', data: [8, 12, 15, 18, 22, 25, 28, 24, 20, 16, 12, 8], backgroundColor: chartColors.profitBg, borderColor: chartColors.profit, borderWidth: 1, borderRadius: 4 }, { label: 'Cancellations', data: [2, 3, 2, 4, 3, 5, 4, 3, 2, 2, 1, 1], backgroundColor: chartColors.lossBg, borderColor: chartColors.loss, borderWidth: 1, borderRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: chartColors.grid } } } });
+
+            new Chart(document.getElementById('chartLeadTimeDist'), { type: 'bar', data: { labels: leadBins, datasets: [{ label: 'Reservations', data: [8, 15, 25, 28, 15, 7, 2], backgroundColor: chartColors.neutralBg, borderColor: chartColors.neutral, borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: chartColors.grid } } } });
+
+            new Chart(document.getElementById('chartCancellationFunnel'), { type: 'bar', data: { labels: ['Total', 'Active', 'Cancelled', 'Checked Out', 'No Show'], datasets: [{ label: 'Reservations', data: [100, 72, 18, 8, 2], backgroundColor: [chartColors.neutralBg, chartColors.profitBg, chartColors.lossBg, chartColors.neutralBg, chartColors.warningBg], borderColor: [chartColors.neutral, chartColors.profit, chartColors.loss, chartColors.neutral, chartColors.warning], borderWidth: 1, borderRadius: 4, indexAxis: 'y' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, display: false }, y: { grid: { display: false } } } });
+        }
+
+        function renderCountryTable() {
+            const countryData = [ { country: 'VN', reservations: 68, roomNights: 82, avgRev: '1,450,000 VND', cancRate: '8.2%' }, { country: 'US', reservations: 12, roomNights: 18, avgRev: '3,200,000 VND', cancRate: '5.1%' }, { country: 'CN', reservations: 8, roomNights: 9, avgRev: '2,100,000 VND', cancRate: '12.5%' }, { country: 'KR', reservations: 6, roomNights: 5, avgRev: '1,800,000 VND', cancRate: '3.3%' }, { country: 'JP', reservations: 6, roomNights: 4, avgRev: '2,400,000 VND', cancRate: '0%' } ];
+            const tbody = document.getElementById('countryTableBody');
+            tbody.innerHTML = countryData.map(d => `<tr><td class="py-2 px-3 font-mono">${d.country}</td><td class="py-2 px-3 text-right">${d.reservations}</td><td class="py-2 px-3 text-right">${d.roomNights}</td><td class="py-2 px-3 text-right font-mono">${d.avgRev}</td><td class="py-2 px-3 text-right">${d.cancRate}</td></tr>`).join('');
+        }
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active', 'border-blue-600', 'text-[var(--color-primary)]'); b.classList.add('text-[var(--color-muted-foreground)]'); b.setAttribute('aria-selected', 'false'); });
+                btn.classList.add('active', 'border-blue-600', 'text-[var(--color-primary)]');
+                btn.classList.remove('text-[var(--color-muted-foreground)]');
+                btn.setAttribute('aria-selected', 'true');
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+                document.getElementById('panel-' + btn.dataset.tab).classList.remove('hidden');
+                initChartsForTab(btn.dataset.tab);
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderKPIs();
+            initChartsForTab('trends');
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            const btn = document.getElementById('refreshBtn');
+            btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Refreshing...</span>';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Refresh</span>';
+                btn.disabled = false;
+                document.getElementById('lastRefresh').textContent = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }, 800);
+        });
+
+        ['dateFrom', 'dateTo', 'propertySelect'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                document.getElementById('lastRefresh').textContent = 'Updating...';
+                setTimeout(() => { document.getElementById('lastRefresh').textContent = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }, 500);
+            });
+        });
+
+        function renderKPIs() {
+            const container = document.getElementById('kpiRow');
+            container.innerHTML = kpiData.map((kpi, i) => {
+                const c = colorMap[kpi.color];
+                const trendIcon = kpi.trendUp ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>' : '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>';
+                return `<article class="kpi-card animate-in" style="animation-delay: ${i * 50}ms; background:${c.bg}; border-color:${c.border};"><div class="flex items-start justify-between mb-2"><p class="text-xs font-medium text-[var(--color-muted-foreground)] leading-tight">${kpi.label}</p>${kpi.badge ? `<span class="badge-est">${kpi.badge}</span>` : ''}</div><div class="flex items-baseline gap-1 mb-1"><span class="font-mono text-2xl lg:text-3xl font-semibold" style="color:${c.text};">${kpi.value}</span>${kpi.unit ? `<span class="text-sm font-medium" style="color:${c.text}; opacity:0.8;">${kpi.unit}</span>` : ''}</div><div class="flex items-center gap-1.5"><span class="text-xs font-medium" style="color:${kpi.trendUp ? '#16A34A' : '#DC2626'};">${kpi.trendIcon || ''}${kpi.trend}</span><span class="text-[10px] text-[var(--color-muted-foreground)]">vs prior period</span></div></article>`;
+            }).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderKPIs();
+            initChartsForTab('trends');
+        });
+    </script>
+</body>
+</html>

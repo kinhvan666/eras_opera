@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Mockup V4</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #F8F9FA;
+            --bg-card: #FFFFFF;
+            --text-primary: #212529;
+            --text-secondary: #6C757D;
+            --accent-blue: #0D6EFD;
+            --kpi-positive: #198754;
+            --kpi-negative: #DC3545;
+            --border: #DEE2E6;
+            --font-sans: 'Inter', sans-serif;
+            --grid-gap: 16px;
+            --card-padding: 16px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: var(--grid-gap);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            gap: var(--grid-gap);
+            grid-template-columns: repeat(12, 1fr);
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: var(--card-padding);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: var(--grid-gap);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: var(--grid-gap);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .header .project-name {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-filter label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 14px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .kpi-row {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--grid-gap);
+        }
+
+        .kpi-card {
+            text-align: center;
+        }
+
+        .kpi-card .label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .kpi-card .value {
+            font-size: 32px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .kpi-card .delta {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .delta.positive { color: var(--kpi-positive); }
+        .delta.negative { color: var(--kpi-negative); }
+
+        .main-content {
+            grid-column: 1 / span 9;
+            display: grid;
+            gap: var(--grid-gap);
+        }
+
+        .sidebar {
+            grid-column: 10 / -1;
+            display: grid;
+            gap: var(--grid-gap);
+            align-content: start;
+        }
+
+        .chart-card {
+            min-height: 250px;
+        }
+
+        .chart-card h3 {
+            margin: 0 0 var(--card-padding) 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <div class="project-name">ErasOpera > Booking Core Dashboard</div>
+            <h1>Project: ErasOpera</h1>
+        </div>
+        <div class="filter-group">
+            <label for="property-select">Property:</label>
+            <select id="property-select" name="property">
+                <option value="all">All Properties</option>
+                <option value="hcm">Hanoi Central Hotel</option>
+                <option value="hanoi">Saigon Riverside</option>
+                <option value="danang">Da Nang Beach Resort</option>
+            </select>
+            <label for="start-date">From:</label>
+            <input type="date" id="start-date" name="start-date">
+            <label for="end-date">To:</label>
+            <input type="date" id="end-date" name="end-date">
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="main-content">
+            <div class="card kpi-row">
+                <div class="kpi-card">
+                    <div class="label">Occupancy</div>
+                    <div class="value">72.3%</div>
+                    <div class="delta negative">▼ 2.1%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="label">ADR</div>
+                    <div class="value">$1,250</div>
+                     <div class="delta positive">▲ 5.3%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="label">RevPAR</div>
+                    <div class="value">$903</div>
+                    <div class="delta positive">▲ 3.1%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="label">Revenue</div>
+                    <div class="value">$1.2M</div>
+                    <div class="delta positive">▲ 8.7%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="label">Reservations</div>
+                    <div class="value">1,247</div>
+                    <div class="delta negative">▼ 1.2%</div>
+                </div>
+                 <div class="kpi-card">
+                    <div class="label">Room Nights</div>
+                    <div class="value">2,847</div>
+                    <div class="delta positive">▲ 4.1%</div>
+                </div>
+                 <div class="kpi-card">
+                    <div class="label">Lead Time</div>
+                    <div class="value">23.4d</div>
+                     <div class="delta negative">▼ 1.2d</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="label">Canc. Rate</div>
+                    <div class="value">14.2%</div>
+                </div>
+            </div>
+
+            <div class="card chart-card">
+                <h3>Trend Analysis</h3>
+                <div class="chart-placeholder">
+                    <svg viewBox="0 0 400 200" preserveAspectRatio="none" width="100%" height="100%">
+                        <polyline fill="none" stroke="#0D6EFD" stroke-width="2" points="0,150 50,120 100,140 150,100 200,130 250,90 300,110 350,80 400,100" />
+                        <path fill="#0D6EFD" fill-opacity="0.1" d="M0,150 L50,120 L100,140 L150,100 L200,130 L250,90 L300,110 L350,80 L400,100 L400,200 L0,200 Z" />
+                    </svg>
+                </div>
+            </div>
+
+             <div class="card chart-card">
+                <h3>Segment Analysis</h3>
+                <div class="chart-placeholder">
+                    <svg viewBox="0 0 400 200" preserveAspectRatio="none" width="100%" height="100%">
+                        <rect x="20" y="50" width="40" height="150" fill="#0D6EFD" />
+                        <rect x="70" y="80" width="40" height="120" fill="#198754" />
+                        <rect x="120" y="120" width="40" height="80" fill="#FFC107" />
+                        <rect x="170" y="20" width="40" height="180" fill="#DC3545" />
+                        <text x="40" y="210" font-size="11" fill="#6C757D" text-anchor="middle" transform="rotate(-45 40,210)">OTA</text>
+                        <text x="90" y="210" font-size="11" fill="#6C757D" text-anchor="middle" transform="rotate(-45 90,210)">Direct</text>
+                        <text x="140" y="210" font-size="11" fill="#6C757D" text-anchor="middle" transform="rotate(-45 140,210)">Corporate</text>
+                        <text x="190" y="210" font-size="11" fill="#6C757D" text-anchor="middle" transform="rotate(-45 190,210)">Walk-in</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="card chart-card">
+                <h3>Pacing Overview</h3>
+                 <div class="chart-placeholder">
+                    <svg viewBox="0 0 400 200" preserveAspectRatio="none" width="100%" height="100%">
+                       <polyline fill="none" stroke="#0D6EFD" stroke-width="2" points="0,100 100,80 200,120 300,100 400,130" />
+                       <polyline fill="none" stroke="#6C757D" stroke-width="2" stroke-dasharray="4" points="0,120 100,100 200,140 300,120 400,150" />
+                    </svg>
+                </div>
+            </div>
+            <div class="card chart-card">
+                <h3>Pickup Analysis</h3>
+                 <div class="chart-placeholder" style="flex-direction: column; align-items: stretch; padding: 10px; gap: 5px; height: auto;">
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>7d</span><span style="color: var(--kpi-positive)">+120</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>30d</span><span style="color: var(--kpi-positive)">+450</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>90d</span><span style="color: var(--kpi-negative)">-50</span></div>
+                </div>
+            </div>
+            <div class="card chart-card">
+                <h3>Segment Details</h3>
+                 <div class="chart-placeholder">
+                    <svg viewBox="0 0 400 200" preserveAspectRatio="none" width="100%" height="100%">
+                        <rect x="20" y="40" width="300" height="20" fill="#0D6EFD" />
+                        <rect x="20" y="90" width="250" height="20" fill="#198754" />
+                        <rect x="20" y="140" width="350" height="20" fill="#FFC107" />
+                    </svg>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

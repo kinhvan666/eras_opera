@@ -14,3 +14,8 @@ models:
       +materialized: view
     dimensional:
       +materialized: table
+    marts:
+      +materialized: table
+
+vars:
+  room_count_default: 250  # fallback when enterprise_hotel_config not yet extracted for a hotel_id

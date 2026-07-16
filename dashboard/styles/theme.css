@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #F8F9FA;
+  --bg-card: #FFFFFF;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --accent-blue: #0B5ED7;
+  --kpi-positive: #157347;
+  --kpi-negative: #DC3545;
+  --kpi-neutral: #495057;
+  --badge-estimated-bg: #B45309;
+  --badge-estimated-text: #FFFFFF;
+  --border: #DEE2E6;
+  --grid-gap: 16px;
+  --card-padding: 16px;
+  --font-sans: 'Inter', sans-serif;
+}
+
+html, body, [class*="css"] {
+  font-family: var(--font-sans);
+}
+
+/* Hide Streamlit default header bar and footer */
+[data-testid="stHeader"],
+[data-testid="stHeader"] *,
+header[data-testid="stHeader"],
+.stApp > header,
+#stDecoration {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+}
+[data-testid="stToolbar"] {
+  display: none !important;
+}
+footer, footer * {
+  display: none !important;
+}
+.stApp {
+  padding-top: 0 !important;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--card-padding);
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .kpi-value {
+    font-size: 18px;
+  }
+}
+
+.kpi-badge-est {
+  background: var(--badge-estimated-bg);
+  color: var(--badge-estimated-text);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 6px;
+}

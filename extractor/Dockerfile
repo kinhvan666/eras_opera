@@ -19,4 +19,4 @@ RUN poetry config virtualenvs.create false && poetry install --only main --no-ro
 COPY src/ ./src/
 
 # Command to run the application
-CMD ["python", "src/main.py"]
+CMD ["python", "-m", "src"]

@@ -14,6 +14,8 @@ with reservation_nights as (
         s.total_amount,
         s.arrival_date,
         s.departure_date,
+        s.created_at::date as booking_date,
+        s.reservation_status,
         gs.date_day as business_date,
         -- Calculate night count for per-night revenue allocation
         (s.departure_date - s.arrival_date)::int as night_count
@@ -39,5 +41,8 @@ select
     market_code,
     source_of_business,
     room_type,
-    (total_amount::numeric / night_count) as night_amount
+    (total_amount::numeric / night_count) as night_amount,
+    arrival_date,
+    booking_date,
+    reservation_status
 from reservation_nights

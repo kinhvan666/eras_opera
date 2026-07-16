@@ -34,7 +34,7 @@ function walk(dir, predicate, out = []) {
   const abs = path.join(root, dir);
   if (!fs.existsSync(abs)) return out;
   for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
-    const rel = path.join(dir, entry.name).replace(/\\/g, "/");
+    const rel = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(rel, predicate, out);
     else if (!predicate || predicate(rel)) out.push(rel);
   }

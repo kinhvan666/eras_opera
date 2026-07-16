@@ -47,7 +47,7 @@ function walk(dir, out = []) {
   const abs = path.join(root, dir);
   if (!fs.existsSync(abs)) return out; // never throw on missing root
   for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
-    const rel = path.join(dir, entry.name).replace(/\\/g, "/");
+    const rel = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(rel, out);
     else out.push(rel);
   }
@@ -163,16 +163,13 @@ function contextDocsWithFm() {
 }
 
 function groupOf(relPath) {
-  console.log('groupOf input:', relPath);
   // process/context/{group}/all-{group}.md -> {group}; root all-context.md -> null
   const rest = relPath.replace(/^process\/context\//, "");
-  const parts = rest.split('/');
-  console.log('groupOf parts:', parts);
+  const parts = rest.split(path.sep);
   return parts.length > 1 ? parts[0] : null;
 }
 
 function groupEntrypoints() {
-  console.log('--- groupEntrypoints ---'); const docs = contextDocsWithFm(); console.log('Docs with FM:', docs.map(d=>d.path));
   return contextDocsWithFm()
     .filter((d) => /(^|\/)all-[^/]+\.md$/.test(d.path) && groupOf(d.path))
     .sort((a, b) => a.path.localeCompare(b.path));

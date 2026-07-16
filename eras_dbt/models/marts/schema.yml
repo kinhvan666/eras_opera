@@ -1,0 +1,108 @@
+version: 2
+
+models:
+  - name: kpi_daily_snapshot
+    description: "Daily grain KPIs per property — one row per property per business_date"
+    columns:
+      - name: business_date
+        description: "The business date for the KPI snapshot"
+        tests:
+          - not_null
+      - name: hotel_id
+        description: "Property identifier"
+        tests:
+          - not_null
+      - name: room_count
+        description: "Total rooms in property (manual 250 for V1)"
+        tests:
+          - not_null
+      - name: reservations
+        description: "Count of distinct reservations"
+        tests:
+          - not_null
+      - name: room_nights
+        description: "Total room nights (stay nights)"
+        tests:
+          - not_null
+      - name: total_revenue
+        description: "Total room revenue (estimated)"
+        tests:
+          - not_null
+      - name: adr
+        description: "Average Daily Rate (estimated)"
+        tests:
+          - not_null
+      - name: occupancy
+        description: "Occupancy rate (estimated, room_nights / (room_count * 1))"
+        tests:
+          - not_null
+      - name: revpar
+        description: "Revenue Per Available Room (estimated)"
+        tests:
+          - not_null
+      - name: avg_lead_time
+        description: "Average booking lead time in days"
+      - name: cancellation_rate
+        description: "Cancellation rate as decimal (0.0-1.0)"
+
+  - name: kpi_pacing
+    description: "Pacing comparison: current year vs prior year by property and date"
+    columns:
+      - name: business_date
+        description: "Current year business date"
+        tests:
+          - not_null
+      - name: hotel_id
+        description: "Property identifier"
+        tests:
+          - not_null
+      - name: current_occupancy
+        tests:
+          - not_null
+      - name: prior_occupancy
+      - name: occupancy_pace_pct
+      - name: current_adr
+        tests:
+          - not_null
+      - name: prior_adr
+      - name: adr_pace_pct
+      - name: current_revpar
+        tests:
+          - not_null
+      - name: prior_revpar
+      - name: revpar_pace_pct
+      - name: current_revenue
+        tests:
+          - not_null
+      - name: prior_revenue
+      - name: revenue_pace_pct
+      - name: current_reservations
+        tests:
+          - not_null
+      - name: prior_reservations
+      - name: current_room_nights
+        tests:
+          - not_null
+      - name: prior_room_nights
+
+  - name: kpi_pickup
+    description: "Forward pickup analysis: 7/30/90 day windows per property"
+    columns:
+      - name: hotel_id
+        description: "Property identifier"
+        tests:
+          - not_null
+      - name: window_days
+        description: "Pickup window: 7, 30, or 90 days"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [7, 30, 90]
+      - name: pickup_rooms
+        description: "Rooms picked up in window"
+        tests:
+          - not_null
+      - name: pickup_revenue
+        description: "Revenue picked up in window"
+        tests:
+          - not_null
