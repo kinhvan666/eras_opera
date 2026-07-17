@@ -8,7 +8,7 @@ date: 13-07-26
 
 # ErasOpera - All Context
 
-Last updated: 2026-07-13
+Last updated: 2026-07-17
 
 This file is the root context entrypoint for the repo.
 
@@ -38,9 +38,7 @@ tables, star schema) in PostgreSQL to power BI and reporting for hotel operation
 - **Shape:** ELT/ETL — Python extract/load from OPERA Cloud APIs → raw/staging in Postgres → dbt
   SQL models build the dimensional layer.
 
-**Project stage:** greenfield. No application source code or manifest exists yet — this repo
-currently holds the API specs, the Kimball reference, and this agent harness. Architecture is being
-established through the RIPER-5 workflow.
+**Project stage:** active development. Core extraction + dimensional model + dashboard are built and running. Python extractor (`extractor/`), dbt project (`eras_dbt/`), and Streamlit dashboard (`dashboard/`) all exist. Architecture decisions are documented in `process/features/booking-core/` completed plans.
 
 ---
 
@@ -177,26 +175,38 @@ ErasOpera/
     OPERA Cloud *.json       -- 40 Oracle OPERA Cloud OpenAPI (Swagger 2.0) specs, v26.2.0.0
     Nor1 Integrated Upsell API (24.4.0.0).json
     The Data Warehouse Toolkit - Kimball.pdf   -- dimensional modeling reference
+  extractor/                 -- Python extract/load package (poetry; pyproject.toml at repo root)
+    src/                     -- client.py, database.py, main.py, extractors/
+    tests/                   -- pytest test suite (mocked HTTP + DB)
+  eras_dbt/                  -- dbt project (staging + dimensional models)
+    models/staging/          -- stg_reservations.sql, stg_hotel_config.sql
+    models/dimensional/      -- dim_date, dim_property, dim_rate, fct_reservation_night
+    models/sources/          -- sources.yml (raw.booking_core_reservations, raw.enterprise_hotel_config)
+    tests/                   -- singular dbt tests (e.g. test_dim_property_room_count_not_null_hotel_79017.sql)
+    .user.yml                -- gitignored dbt profiles (credentials)
+  dashboard/                 -- Streamlit dashboard (Revenue / Trends / Segments / Pacing tabs)
+    app.py                   -- main Streamlit entry point
+    Dockerfile               -- dashboard container
   process/
     context/                 -- this context system (all-context.md + groups)
     general-plans/           -- general plans (active/completed/backlog, task-folder convention)
     features/                -- feature-scoped storage (booking-core, financials, operations, crm-profiles)
-    development-protocols/    -- RIPER-5 methodology docs
+    development-protocols/   -- RIPER-5 methodology docs
+  docker-compose.yml         -- orchestrates extractor + dashboard containers
+  pyproject.toml             -- Python project root (poetry; manages extractor package)
   .claude/ .codex/ .agents/  -- agent harness (agents + skills)
   vibecode-pro-max-kit/      -- the harness installer source (NOT part of the ErasOpera app)
-  AGENTS.md  CLAUDE.md        -- managed protocol files
+  AGENTS.md  CLAUDE.md       -- managed protocol files
 ```
-
-> **Note:** application source code (Python extract/load, dbt project, Postgres DDL/migrations) does
-> not exist yet. When created, expect a Python package + a dbt project directory; update this section.
 
 ## Technology Stack
 
-- **Language / runtime:** Python (data engineering — extract/load layer). Version + package manager
-  (pip / uv / poetry) TBD at first EXECUTE.
-- **Warehouse:** PostgreSQL (hosts raw/staging + the Kimball dimensional model).
-- **Transformation:** dbt (SQL models) builds fact/dimension tables. dbt tests assert model integrity.
-- **Orchestration:** none yet — start with scripts/cron; adopt Dagster/Airflow/Prefect later if needed.
+- **Language / runtime:** Python 3 (data engineering — extract/load layer). Package manager: **poetry** (`pyproject.toml` + `poetry.lock` at repo root).
+- **Warehouse:** PostgreSQL (hosts raw/staging/dimensional/analytics schemas).
+- **Transformation:** dbt (`eras_dbt/`) builds staging + fact/dimension tables. dbt tests assert model integrity. Run with `--profiles-dir .` using `eras_dbt/.user.yml` (gitignored credentials).
+- **Dashboard:** Streamlit (`dashboard/app.py`) with Dockerfile; reads from `analytics` schema views.
+- **Containers:** Docker + docker-compose (`docker-compose.yml` at repo root) for extractor and dashboard.
+- **Orchestration:** none yet — manual script execution; adopt Dagster/Airflow/Prefect later if needed.
 - **Data sources:** Oracle OPERA Cloud REST APIs (OAuth-secured; specs in `docs/`).
 - **Modeling methodology:** Kimball dimensional modeling (star schema, conformed dimensions, SCDs).
 
@@ -213,22 +223,25 @@ ErasOpera/
 - **Async APIs:** several OPERA services have an "Asynchronous" variant (Reservation Async, Cashiering
   Async, etc.) for bulk/deferred pulls — prefer these for large historical backfills.
 - **Naming:** follow Python (`snake_case`) and dbt (`snake_case` models, `stg_`/`dim_`/`fct_`
-  prefixes) conventions once the code layer is established.
+  prefixes) conventions — established and in use.
+- **Run extractor:** `cd extractor && poetry run python -m src` (runs both ReservationExtractor and HotelConfigExtractor against OPERA Cloud; writes to raw Postgres tables)
+- **Run tests:** `cd extractor && poetry run pytest tests/ -v`
+- **Run dbt:** `cd eras_dbt && dbt build --profiles-dir .`
 
 ## Environment and Configuration
 
-Config files and env var groups do not exist yet (greenfield). Anticipated env var categories
-(names only, populate when the code layer lands):
+Config is managed via `extractor/src/config.py` (reads env vars) and `eras_dbt/.user.yml` (gitignored dbt profiles). Key env var categories:
 
-- **OPERA Cloud auth:** OAuth client id/secret, token URL, app key, environment/hostname, hotel/chain code
-- **Warehouse:** `DATABASE_URL` (or discrete `PG*` host/port/user/password/db) for Postgres
-- **dbt:** profile/target settings (`profiles.yml`)
+- **OPERA Cloud auth:** OAuth client id/secret, token URL, app key, environment/hostname, hotel/chain code (loaded from `.env` or environment)
+- **Warehouse:** `DATABASE_URL` or discrete `PG*` vars (host/port/user/password/db) for Postgres — used by both extractor and dbt
+- **dbt:** `eras_dbt/.user.yml` holds the `dev` target profile (gitignored); pass `--profiles-dir .` when running dbt from within `eras_dbt/`
 
 Never store secret values in context files — record variable names only.
 
 ## Scan Metadata
 
 - Generated: 2026-07-13T02:27:34Z
-- HEAD: no-git (not a git working tree at scan time)
-- Mode: fresh
-- Package manager: none yet (Python; pip/uv/poetry TBD)
+- Last delta update: 2026-07-17 (post p1e room-config EXECUTE; project stage updated to active)
+- HEAD: master
+- Mode: delta
+- Package manager: poetry (confirmed)

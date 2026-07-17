@@ -44,9 +44,65 @@ Read this entrypoint when:
 - choosing an SCD strategy for an attribute that changes over time
 - reviewing warehouse schema naming or layering
 
+## Current Implementation State (as of 2026-07-17)
+
+The `eras_dbt/` dbt project is built and running against a dev PostgreSQL instance.
+
+### Raw Layer (PostgreSQL `raw` schema)
+
+| Table | Source | Insert pattern |
+|---|---|---|
+| `raw.booking_core_reservations` | OPERA Cloud Reservation API | Upsert (ON CONFLICT DO UPDATE) |
+| `raw.enterprise_hotel_config` | OPERA Cloud Enterprise Config + Room Config APIs | Append-only (plain INSERT, no unique constraint) — one row per extraction run |
+
+### Staging Models (`eras_dbt/models/staging/`)
+
+| Model | Key logic |
+|---|---|
+| `stg_reservations` | Flattens raw JSON from `raw.booking_core_reservations`; parses arrival/departure dates, rates, segments |
+| `stg_hotel_config` | Deduplicates append-only `raw.enterprise_hotel_config` via `DISTINCT ON (hotel_id) ORDER BY extracted_at DESC`; extracts `room_count` (physical_room_count) and `hotel_name` (from `raw_data->'hotelConfigInfo'->>'hotelName'`) |
+
+### Dimensional Models (`eras_dbt/models/dimensional/`)
+
+| Model | Grain | Key columns | Notes |
+|---|---|---|---|
+| `dim_date` | One row per calendar date | date_key, date, year, month, quarter, day_of_week | Standard calendar dimension |
+| `dim_property` | One row per distinct hotel_id in stg_reservations | hotel_id, hotel_name, room_count | **room_count is real extracted value** from stg_hotel_config (NULL when no snapshot, never hardcoded); hotel_name also from stg_hotel_config |
+| `dim_rate` | One row per distinct rate_code | rate_code, rate_description | From stg_reservations |
+| `fct_reservation_night` | One row per reservation-night | hotel_id, date_key, rate_code, room_nights, revenue, occupancy, revpar | Primary fact; powers dashboard KPIs |
+
+### dbt Tests
+
+- `schema.yml` files in `staging/` and `dimensional/` carry standard `not_null` / `unique` / `relationships` tests
+- `eras_dbt/tests/test_dim_property_room_count_not_null_hotel_79017.sql` — singular test asserting dim_property.room_count IS NOT NULL for hotel_id='79017' (physical_room_count=49 confirmed via Room Config API)
+
+### dbt Commands
+
+```bash
+cd eras_dbt && dbt build --select stg_hotel_config dim_property --profiles-dir .   # space-separated targets
+cd eras_dbt && dbt build --profiles-dir .                                           # full rebuild
+cd eras_dbt && dbt test --profiles-dir .                                            # tests only
+```
+
+Use `--profiles-dir .` when `eras_dbt/.user.yml` holds the credentials (gitignored).
+
+### Python Extractor (`extractor/`)
+
+- Package manager: **poetry** (`pyproject.toml` at repo root, `poetry.lock`)
+- `extractor/src/`: `client.py` (OPERA Cloud OAuth + HTTP), `database.py` (raw table setup + insert methods), `main.py` (orchestration)
+- `HotelConfigExtractor`: calls Enterprise Config + Room Config APIs; writes via `insert_hotel_config_snapshot()` (append-only, no ON CONFLICT)
+- `ReservationExtractor`: calls Reservation API; writes via `insert_raw_data()` (upsert)
+
+### Dashboard (`dashboard/`)
+
+- Streamlit app (`dashboard/app.py`) with Dockerfile
+- Tabs: Revenue, Trends, Segments, Pacing — reads from `analytics.dim_property`, `analytics.fct_reservation_night`, and KPI views
+
+---
+
 ## Quick Routing
 
-Deeper docs will be added as the warehouse takes shape. Planned (not yet created):
+Deeper docs will be added as the warehouse grows. Planned (not yet created):
 
 - a dimensional-model catalog — fact/dimension list, grains, conformed dims
 - a dbt-conventions doc — dbt project layout, naming, materializations, tests
