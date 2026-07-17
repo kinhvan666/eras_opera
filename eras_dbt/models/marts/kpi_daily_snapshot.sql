@@ -15,7 +15,7 @@ with operational as (
         f.business_date,
         f.hotel_id,
         p.room_count,
-        count(distinct f.reservation_id)                                            as reservations,
+        count(distinct case when f.business_date = f.arrival_date then f.reservation_id end) as reservations,
         count(*)                                                                    as room_nights,
         sum(f.night_amount)                                                         as total_revenue,
         -- ADR excludes complimentary/voucher ($0) nights from both numerator and

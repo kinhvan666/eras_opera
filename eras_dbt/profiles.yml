@@ -1,0 +1,19 @@
+eras_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      user: user
+      password: "password"
+      port: 5434
+      dbname: erg_opera_data
+      schema: analytics
+      threads: 4
+      keepalives_idle: 0
+      connect_timeout: 10
+      retries: 1
+      application_name: dbt
+      search_path: analytics
+      role: null
+      sslmode: disable

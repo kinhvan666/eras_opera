@@ -29,8 +29,8 @@ async def run(arrival_start_date: str, arrival_end_date: str):
     physical_room_count = await hotel_extractor.fetch_physical_room_count()
     print(f"Physical room count: {physical_room_count}")
 
-    db.upsert_hotel_config(settings.opera_hotel_id, hotel_config_data, physical_room_count)
-    print("Hotel config upserted.")
+    db.insert_hotel_config_snapshot(settings.opera_hotel_id, hotel_config_data, physical_room_count)
+    print("Hotel config snapshot inserted.")
 
     extractor = ReservationExtractor(client)
 

@@ -59,6 +59,19 @@ SPARKLINE_SQL = """
     order by business_date
 """
 
+# Monthly revenue aggregation (for Overview bar chart)
+MONTHLY_REVENUE_SQL = """
+    select
+        date_trunc('month', business_date)::date as month,
+        sum(total_revenue)                        as monthly_revenue,
+        sum(room_nights)                          as monthly_room_nights
+    from analytics.kpi_daily_snapshot
+    where business_date between %(start_date)s and %(end_date)s
+      and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
+    group by 1
+    order by 1
+"""
+
 
 @st.cache_data(ttl=CACHE_TTL_SECONDS)
 def fetch_executive_properties():
@@ -94,6 +107,15 @@ def fetch_sparkline_data(start_date, end_date, hotel_id=None):
     """Fetch daily KPI data for sparkline charts."""
     with psycopg2.connect(DATABASE_URL) as conn:
         return pd.read_sql(SPARKLINE_SQL, conn, params={
+            "start_date": start_date, "end_date": end_date, "hotel_id": hotel_id
+        })
+
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def fetch_monthly_revenue(start_date, end_date, hotel_id=None):
+    """Fetch revenue aggregated by calendar month for the bar chart."""
+    with psycopg2.connect(DATABASE_URL) as conn:
+        return pd.read_sql(MONTHLY_REVENUE_SQL, conn, params={
             "start_date": start_date, "end_date": end_date, "hotel_id": hotel_id
         })
 

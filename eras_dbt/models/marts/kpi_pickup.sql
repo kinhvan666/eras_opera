@@ -4,9 +4,8 @@
 -- Based on reservations with arrival_date in future relative to snapshot date
 
 with snapshot_date as (
-    -- Use the latest business_date in the fact table as the "today" reference
-    select max(business_date)::date as snap_date
-    from {{ ref('fct_reservation_night') }}
+    -- Use today as the reference point so future reservations are always forward-looking
+    select current_date as snap_date
 ),
 future_reservations as (
     select

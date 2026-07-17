@@ -67,12 +67,50 @@ def fetch_kpi_summary(start_date, end_date, hotel_id=None):
     return _aggregate(current), _aggregate(prior)
 
 
+REVENUE_BREAKDOWN_SQL = """
+    select
+        coalesce(market_code, 'Unknown')        as market_code,
+        coalesce(rate_plan_code, 'Unknown')     as rate_plan_code,
+        coalesce(room_type, 'Unknown')           as room_type,
+        sum(night_amount)                        as revenue,
+        count(*)                                 as room_nights
+    from analytics.fct_reservation_night
+    where business_date between %(start_date)s and %(end_date)s
+      and reservation_status not in ('Cancelled', 'NoShow')
+      and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
+    group by market_code, rate_plan_code, room_type
+"""
+
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def fetch_revenue_breakdown(start_date, end_date, hotel_id=None):
+    with psycopg2.connect(DATABASE_URL) as conn:
+        return pd.read_sql(REVENUE_BREAKDOWN_SQL, conn,
+                           params={"start_date": start_date, "end_date": end_date, "hotel_id": hotel_id})
+
+
 @st.cache_data(ttl=CACHE_TTL_SECONDS)
 def fetch_kpi_daily_segmented(start_date, end_date, hotel_id=None, segment_col=None):
-    """Fetch daily KPI data joined with reservation-level segments for segmentation charts."""
-    sql = KPI_DAILY_SEGMENTED_SQL
-    if segment_col:
-        sql += f" and s.{segment_col} is not null"
+    """Room nights and revenue per segment, queried directly from fct_reservation_night.
+
+    Each row in fct_reservation_night = 1 room night, so count(*) = room nights.
+    The old approach joined kpi_daily_snapshot (daily totals) × fact rows, causing
+    fan-out multiplication (daily total counted once per reservation row).
+    """
+    if not segment_col:
+        return pd.DataFrame()
+    sql = f"""
+        select
+            {segment_col},
+            count(*)            as room_nights,
+            sum(night_amount)   as total_revenue
+        from analytics.fct_reservation_night
+        where business_date between %(start_date)s and %(end_date)s
+          and reservation_status not in ('Cancelled', 'NoShow')
+          and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
+          and {segment_col} is not null
+        group by {segment_col}
+    """
     with psycopg2.connect(DATABASE_URL) as conn:
         return pd.read_sql(sql, conn, params={"start_date": start_date, "end_date": end_date, "hotel_id": hotel_id})
 

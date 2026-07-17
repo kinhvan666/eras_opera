@@ -4,12 +4,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import pandas as pd
 import streamlit as st
 
 from config.settings import DEFAULT_DATE_RANGE_DAYS
 from executive.data.repository import (determine_status, fetch_executive_kpi_summary,
                             fetch_executive_properties, fetch_executive_kpi_daily,
-                            fetch_property_portfolio, fetch_sparkline_data)
+                            fetch_monthly_revenue, fetch_property_portfolio,
+                            fetch_sparkline_data)
 from executive.ui.components import (chart_container, executive_kpi_card, executive_tab_bar,
                            property_portfolio_table, section_title)
 
@@ -201,6 +203,29 @@ if active_tab == 'overview':
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+    # Monthly Revenue bar chart
+    monthly_df = fetch_monthly_revenue(start_date, end_date, hotel_id)
+    if not monthly_df.empty:
+        monthly_df['month_label'] = pd.to_datetime(monthly_df['month']).dt.strftime('%b %Y')
+        section_title("Revenue by Month")
+        import altair as alt
+        bar = alt.Chart(monthly_df).mark_bar(color='var(--accent-blue)').encode(
+            x=alt.X('month_label:N', sort=list(monthly_df['month_label']), title='Month'),
+            y=alt.Y('monthly_revenue:Q', title='Revenue', axis=alt.Axis(format='$,.0f')),
+            tooltip=[
+                alt.Tooltip('month_label:N', title='Month'),
+                alt.Tooltip('monthly_revenue:Q', title='Revenue', format='$,.0f'),
+                alt.Tooltip('monthly_room_nights:Q', title='Room Nights', format=','),
+            ]
+        )
+        text = bar.mark_text(align='center', baseline='bottom', dy=-4, fontSize=11).encode(
+            text=alt.Text('monthly_revenue:Q', format='$,.0f')
+        )
+        chart_container(
+            alt.layer(bar, text).properties(height=300),
+            height=330
+        )
 
 elif active_tab == 'properties':
     section_title("Property Portfolio Comparison")

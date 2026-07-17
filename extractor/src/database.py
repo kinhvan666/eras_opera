@@ -35,6 +35,10 @@ class Database:
                 ((raw_data->'reservationIdList'->0->>'id'))
                 WHERE raw_data->'reservationIdList'->0->>'id' IS NOT NULL;
             """)
+            # Append-only snapshot table: every extraction run inserts a new row so
+            # history is preserved (SPEC AC2). Drop the legacy unique index on hotel_id
+            # so plain INSERTs no longer collide; this is idempotent on re-run.
+            cur.execute("DROP INDEX IF EXISTS raw.uq_enterprise_hotel_config_hotel_id;")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS raw.enterprise_hotel_config (
                     id SERIAL PRIMARY KEY,
@@ -43,10 +47,6 @@ class Database:
                     raw_data JSONB NOT NULL,
                     physical_room_count INTEGER
                 );
-            """)
-            cur.execute("""
-                CREATE UNIQUE INDEX IF NOT EXISTS uq_enterprise_hotel_config_hotel_id
-                ON raw.enterprise_hotel_config (hotel_id);
             """)
             # Add physical_room_count column to existing tables created before this field existed.
             cur.execute("""
@@ -82,17 +82,17 @@ class Database:
             )
             self.conn.commit()
 
-    def upsert_hotel_config(self, hotel_id: str, data: dict, physical_room_count: int | None = None):
-        """Upserts hotel config — one row per hotel_id, always keeps the latest."""
+    def insert_hotel_config_snapshot(self, hotel_id: str, data: dict, physical_room_count: int | None = None):
+        """Appends a new hotel config snapshot — one row per extraction run (SPEC AC2).
+
+        Plain INSERT with no ON CONFLICT clause: history is never overwritten, so
+        stg_hotel_config dedups to the latest snapshot per hotel via extracted_at.
+        """
         with self.conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO raw.enterprise_hotel_config (hotel_id, raw_data, physical_room_count)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (hotel_id) DO UPDATE SET
-                    raw_data             = EXCLUDED.raw_data,
-                    physical_room_count  = EXCLUDED.physical_room_count,
-                    extracted_at         = NOW()
+                INSERT INTO raw.enterprise_hotel_config (hotel_id, raw_data, physical_room_count, extracted_at)
+                VALUES (%s, %s, %s, NOW())
                 """,
                 (hotel_id, json.dumps(data), physical_room_count)
             )

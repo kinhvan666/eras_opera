@@ -23,8 +23,7 @@ def draw(start_date, end_date, hotel_id=None):
             if market_df.empty:
                 st.info("No market data")
             else:
-                agg = (market_df.groupby("market_code")["room_nights"]
-                       .sum().reset_index().sort_values("room_nights", ascending=False))
+                agg = market_df.sort_values("room_nights", ascending=False)
                 st.altair_chart(
                     alt.Chart(agg).mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3).encode(
                         x=alt.X("market_code:N", sort="-y", title="Market"),
@@ -42,12 +41,13 @@ def draw(start_date, end_date, hotel_id=None):
             if source_df.empty:
                 st.info("No source data")
             else:
-                agg = (source_df.groupby("source_of_business")["room_nights"]
-                       .sum().reset_index().sort_values("room_nights"))
+                agg = source_df.sort_values("room_nights")
                 st.altair_chart(
-                    alt.Chart(agg).mark_bar(color=BLUE, cornerRadiusTopRight=3, cornerRadiusBottomRight=3).encode(
-                        y=alt.Y("source_of_business:N", sort="x", title="Source"),
+                    alt.Chart(agg).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3).encode(
+                        y=alt.Y("source_of_business:N", sort="-x", title="Source"),
                         x=alt.X("room_nights:Q", title="Room Nights"),
+                        color=alt.Color("source_of_business:N",
+                            scale=alt.Scale(range=PALETTE), legend=None),
                         tooltip=["source_of_business", "room_nights"],
                     ).properties(height=280),
                     use_container_width=True,
@@ -62,8 +62,7 @@ def draw(start_date, end_date, hotel_id=None):
             if rate_df.empty:
                 st.info("No rate plan data")
             else:
-                agg = (rate_df.groupby("rate_plan_code")["room_nights"]
-                       .sum().reset_index().sort_values("room_nights", ascending=False))
+                agg = rate_df.sort_values("room_nights", ascending=False)
                 st.altair_chart(
                     alt.Chart(agg).mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3).encode(
                         x=alt.X("rate_plan_code:N", sort="-y", title="Rate Plan"),
@@ -81,8 +80,7 @@ def draw(start_date, end_date, hotel_id=None):
             if room_df.empty:
                 st.info("No room type data")
             else:
-                agg = (room_df.groupby("room_type")["room_nights"]
-                       .sum().reset_index().sort_values("room_nights", ascending=False))
+                agg = room_df.sort_values("room_nights", ascending=False)
                 st.altair_chart(
                     alt.Chart(agg).mark_bar(color=GREEN, cornerRadiusTopRight=3, cornerRadiusBottomRight=3).encode(
                         y=alt.Y("room_type:N", sort="-x", title="Room Type"),

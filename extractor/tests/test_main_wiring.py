@@ -45,12 +45,12 @@ def patched_run():
 
 @pytest.mark.asyncio
 async def test_run_invokes_hotel_config_extractor(patched_run):
-    """AC6: run() calls fetch_hotel_config() and fetch_physical_room_count() and upserts result."""
+    """AC6: run() calls fetch_hotel_config() and fetch_physical_room_count() and inserts snapshot."""
     await run(_START, _END)
 
     patched_run["hotel"].fetch_hotel_config.assert_called_once()
     patched_run["hotel"].fetch_physical_room_count.assert_called_once()
-    patched_run["db"].upsert_hotel_config.assert_called_once()
+    patched_run["db"].insert_hotel_config_snapshot.assert_called_once()
 
 
 @pytest.mark.asyncio

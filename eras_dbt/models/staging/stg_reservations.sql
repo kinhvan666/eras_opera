@@ -36,7 +36,11 @@ staged as (
         raw_data->'reservationGuest'->'address'->'country'->>'code'      as guest_country_code,
         raw_data->'roomStay'->>'ratePlanCode'                            as rate_plan_code,
         raw_data->'roomStay'->>'marketCode'                              as market_code,
-        raw_data->'roomStay'->>'sourceOfBusiness'                        as source_of_business,
+        -- sourceOfBusiness is unpopulated for this property; sourceCode carries the booking channel
+        coalesce(
+            nullif(raw_data->'roomStay'->>'sourceOfBusiness', ''),
+            raw_data->'roomStay'->>'sourceCode'
+        )                                                                as source_of_business,
         raw_data->>'reservationStatus'                                   as reservation_status,
         (raw_data->'roomStay'->>'pseudoRoom')::boolean                   as is_pseudo_room,
         (raw_data->'roomStay'->>'rateSuppressed')::boolean               as is_rate_suppressed

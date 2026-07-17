@@ -19,6 +19,7 @@ def fmt_vnd(val):
     return f"₫{val:,.0f}"
 from data.repository import fetch_kpi_summary, fetch_properties
 from ui.components import kpi_card
+from ui.tabs.revenue import draw as draw_revenue
 from ui.tabs.trends import draw as draw_trends
 from ui.tabs.segments import draw as draw_segments
 from ui.tabs.pacing import draw as draw_pacing
@@ -100,7 +101,9 @@ else:
         kpi_card("Canc. Rate", f"{current['cancellation_rate'] * 100:.1f}%", current["cancellation_rate"], g(prior, "cancellation_rate"), higher_is_better=False)
 
 # Analytical tabs
-tab_trends, tab_segments, tab_pacing = st.tabs(["Trends", "Segments", "Pacing"])
+tab_revenue, tab_trends, tab_segments, tab_pacing = st.tabs(["Revenue", "Trends", "Segments", "Pacing"])
+with tab_revenue:
+    draw_revenue(start_date, end_date, hotel_id)
 with tab_trends:
     draw_trends(start_date, end_date, hotel_id)
 with tab_segments:
