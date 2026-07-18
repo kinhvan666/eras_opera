@@ -7,3 +7,4 @@ sources:
     tables:
       - name: booking_core_reservations
       - name: enterprise_hotel_config
+      - name: cashiering_postings

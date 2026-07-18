@@ -1,6 +1,36 @@
 version: 2
 
 models:
+  - name: stg_cashiering_postings
+    description: "Revenue-type financial postings from OPERA Cloud, filtered and categorised. Excludes 9xxx Wrapper rows."
+    columns:
+      - name: transaction_no
+        description: "OPERA transaction number — primary identifier for a posting row."
+        tests:
+          - unique
+          - not_null
+      - name: revenue_category
+        description: "Derived category from transaction_code prefix: Room / FnB / Tax / ServiceCharge / Other."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Room', 'FnB', 'Tax', 'ServiceCharge', 'Other']
+      - name: reservation_id
+        description: "OPERA reservation ID (guestInfo.reservationId.id). Nullable — unmatched postings have NULL."
+      - name: hotel_id
+        description: "OPERA hotel/property code."
+      - name: revenue_date
+        description: "Date of the posting (revenueDate from OPERA)."
+      - name: transaction_code
+        description: "OPERA transaction code (TEXT). Revenue-type only; 9xxx excluded."
+      - name: posted_amount
+        description: "Posted amount (numeric)."
+      - name: cashier_id
+        description: "Cashier ID (raw_data.cashierId). Pass-through provenance column."
+      - name: reference
+        description: "Reference string (raw_data.reference). Pass-through provenance column."
+
   - name: stg_reservations
     columns:
       - name: reservation_id
