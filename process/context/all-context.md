@@ -38,7 +38,7 @@ tables, star schema) in PostgreSQL to power BI and reporting for hotel operation
 - **Shape:** ELT/ETL — Python extract/load from OPERA Cloud APIs → raw/staging in Postgres → dbt
   SQL models build the dimensional layer.
 
-**Project stage:** active development. Core extraction + dimensional model + dashboard are built and running. Python extractor (`extractor/`), dbt project (`eras_dbt/`), and Streamlit dashboard (`dashboard/`) all exist. Architecture decisions are documented in `process/features/booking-core/` completed plans.
+**Project stage:** active development. Core extraction + dimensional model + dashboard are built and running. Python extractor (`extractor/`), dbt project (`eras_dbt/`), and Streamlit dashboard (`dashboard/`) all exist. Architecture decisions are documented in `process/features/booking-core/` completed plans. Financials cashiering pipeline Phase 1 complete (2026-07-18): CashieringExtractor operational, 18,245 postings in `raw.cashiering_postings`; Phases 2–5 (staging → fct_folio_line → additive fct_reservation_night columns → dashboard) in progress.
 
 ---
 
@@ -224,7 +224,7 @@ ErasOpera/
   Async, etc.) for bulk/deferred pulls — prefer these for large historical backfills.
 - **Naming:** follow Python (`snake_case`) and dbt (`snake_case` models, `stg_`/`dim_`/`fct_`
   prefixes) conventions — established and in use.
-- **Run extractor:** `cd extractor && poetry run python -m src` (runs both ReservationExtractor and HotelConfigExtractor against OPERA Cloud; writes to raw Postgres tables)
+- **Run extractor:** `cd extractor && poetry run python -m src` (runs ReservationExtractor, HotelConfigExtractor, and CashieringExtractor against OPERA Cloud; writes to raw Postgres tables: `raw.booking_core_reservations`, `raw.enterprise_hotel_config`, `raw.cashiering_postings`)
 - **Run tests:** `cd extractor && poetry run pytest tests/ -v`
 - **Run dbt:** `cd eras_dbt && dbt build --profiles-dir .`
 
@@ -241,7 +241,7 @@ Never store secret values in context files — record variable names only.
 ## Scan Metadata
 
 - Generated: 2026-07-13T02:27:34Z
-- Last delta update: 2026-07-17 (post p1e room-config EXECUTE; project stage updated to active)
+- Last delta update: 2026-07-18 (post Phase 1 financials cashiering EXECUTE; CashieringExtractor operational, raw.cashiering_postings populated)
 - HEAD: master
 - Mode: delta
 - Package manager: poetry (confirmed)

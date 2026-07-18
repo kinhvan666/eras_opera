@@ -44,16 +44,19 @@ Read this entrypoint when:
 - choosing an SCD strategy for an attribute that changes over time
 - reviewing warehouse schema naming or layering
 
-## Current Implementation State (as of 2026-07-17)
+## Current Implementation State (as of 2026-07-18)
 
 The `eras_dbt/` dbt project is built and running against a dev PostgreSQL instance.
 
 ### Raw Layer (PostgreSQL `raw` schema)
 
-| Table | Source | Insert pattern |
-|---|---|---|
-| `raw.booking_core_reservations` | OPERA Cloud Reservation API | Upsert (ON CONFLICT DO UPDATE) |
-| `raw.enterprise_hotel_config` | OPERA Cloud Enterprise Config + Room Config APIs | Append-only (plain INSERT, no unique constraint) — one row per extraction run |
+| Table | Source | Insert pattern | Key column |
+|---|---|---|---|
+| `raw.booking_core_reservations` | OPERA Cloud Reservation API | Upsert (ON CONFLICT DO UPDATE) | reservation_id |
+| `raw.enterprise_hotel_config` | OPERA Cloud Enterprise Config + Room Config APIs | Append-only (plain INSERT, no unique constraint) — one row per extraction run | extracted_at |
+| `raw.cashiering_postings` | OPERA Cloud Cashiering API (`/financialPostings`) | Upsert (ON CONFLICT (transaction_no) DO UPDATE) | transaction_no (INTEGER PK) |
+
+`raw.cashiering_postings` schema: `transaction_no INTEGER PRIMARY KEY, hotel_id TEXT, revenue_date DATE, transaction_code TEXT, posted_amount NUMERIC, raw_data JSONB NOT NULL, extracted_at TIMESTAMPTZ DEFAULT NOW()`. Table created inside `insert_cashiering_postings()` (not in `setup()`). Stores ALL transaction types raw (Revenue + Payment + Wrapper) — Revenue filter applied in staging.
 
 ### Staging Models (`eras_dbt/models/staging/`)
 
@@ -92,6 +95,7 @@ Use `--profiles-dir .` when `eras_dbt/.user.yml` holds the credentials (gitignor
 - `extractor/src/`: `client.py` (OPERA Cloud OAuth + HTTP), `database.py` (raw table setup + insert methods), `main.py` (orchestration)
 - `HotelConfigExtractor`: calls Enterprise Config + Room Config APIs; writes via `insert_hotel_config_snapshot()` (append-only, no ON CONFLICT)
 - `ReservationExtractor`: calls Reservation API; writes via `insert_raw_data()` (upsert)
+- `CashieringExtractor`: calls Cashiering API (`/financialPostings`); writes via `insert_cashiering_postings()` (upsert on transaction_no); extracts in ≤30-day windows; `hasMore` primary pagination stop + `len(chunk) < limit` safety fallback; `BACKFILL_START_DATE = date(2026, 1, 1)` module constant; constructor takes `client` only (DB operations called directly in `main.py`)
 
 ### Dashboard (`dashboard/`)
 
