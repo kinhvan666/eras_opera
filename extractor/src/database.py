@@ -82,6 +82,63 @@ class Database:
             )
             self.conn.commit()
 
+    def insert_cashiering_postings(self, data: list[dict]):
+        """Upserts raw cashiering postings into raw.cashiering_postings.
+
+        The table (and its schema) is created on first call — creation lives HERE, not
+        in setup(), so this module owns its own raw table (validate-contract E6).
+
+        Upsert keyed on transaction_no (integer) so re-running the extractor for the same
+        date range is idempotent (no duplicate rows) and updated raw_data overwrites the
+        prior row (SPEC AC-1 dedup requirement).
+
+        Each row dict must carry: transaction_no, hotel_id, revenue_date, transaction_code,
+        posted_amount, raw_data.
+        """
+        if not data:
+            return
+
+        with self.conn.cursor() as cur:
+            cur.execute("CREATE SCHEMA IF NOT EXISTS raw;")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS raw.cashiering_postings (
+                    transaction_no   INTEGER PRIMARY KEY,
+                    hotel_id         TEXT,
+                    revenue_date     DATE,
+                    transaction_code TEXT,
+                    posted_amount    NUMERIC,
+                    raw_data         JSONB NOT NULL,
+                    extracted_at     TIMESTAMPTZ DEFAULT NOW()
+                );
+            """)
+            psycopg2.extras.execute_values(
+                cur,
+                """
+                INSERT INTO raw.cashiering_postings
+                    (transaction_no, hotel_id, revenue_date, transaction_code, posted_amount, raw_data)
+                VALUES %s
+                ON CONFLICT (transaction_no) DO UPDATE SET
+                    hotel_id         = EXCLUDED.hotel_id,
+                    revenue_date     = EXCLUDED.revenue_date,
+                    transaction_code = EXCLUDED.transaction_code,
+                    posted_amount    = EXCLUDED.posted_amount,
+                    raw_data         = EXCLUDED.raw_data,
+                    extracted_at     = NOW()
+                """,
+                [
+                    (
+                        item["transaction_no"],
+                        item["hotel_id"],
+                        item["revenue_date"],
+                        item["transaction_code"],
+                        item["posted_amount"],
+                        json.dumps(item["raw_data"]),
+                    )
+                    for item in data
+                ],
+            )
+            self.conn.commit()
+
     def insert_hotel_config_snapshot(self, hotel_id: str, data: dict, physical_room_count: int | None = None):
         """Appends a new hotel config snapshot — one row per extraction run (SPEC AC2).
 

@@ -24,6 +24,7 @@ def patched_run():
         patch("src.main.BaseOperaClient") as MockClient,
         patch("src.main.HotelConfigExtractor") as MockHotel,
         patch("src.main.ReservationExtractor") as MockResv,
+        patch("src.main.CashieringExtractor") as MockCash,
     ):
         mock_db = MagicMock()
         MockDB.return_value = mock_db
@@ -40,7 +41,11 @@ def patched_run():
         mock_resv.fetch_active_reservations = AsyncMock(return_value=_ACTIVE)
         MockResv.return_value = mock_resv
 
-        yield {"db": mock_db, "hotel": mock_hotel, "resv": mock_resv}
+        mock_cash = MagicMock()
+        mock_cash.fetch_postings = AsyncMock(return_value=[])
+        MockCash.return_value = mock_cash
+
+        yield {"db": mock_db, "hotel": mock_hotel, "resv": mock_resv, "cash": mock_cash}
 
 
 @pytest.mark.asyncio
@@ -68,3 +73,19 @@ async def test_run_merges_and_inserts_all_reservations(patched_run):
     await run(_START, _END)
 
     patched_run["db"].insert_raw_data.assert_called_once_with(_HISTORICAL + _ACTIVE)
+
+
+@pytest.mark.asyncio
+async def test_run_invokes_cashiering_extractor(patched_run):
+    """run() calls CashieringExtractor.fetch_postings (backfill from BACKFILL_START_DATE)."""
+    await run(_START, _END)
+
+    patched_run["cash"].fetch_postings.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_run_skips_cashiering_insert_when_no_postings(patched_run):
+    """run() does NOT call insert_cashiering_postings when fetch returns []."""
+    await run(_START, _END)
+
+    patched_run["db"].insert_cashiering_postings.assert_not_called()

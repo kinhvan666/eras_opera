@@ -7,6 +7,7 @@ from datetime import date, timedelta
 from src.client import BaseOperaClient, OperaAuthError
 from src.extractors.reservations import ReservationExtractor
 from src.extractors.hotel_config import HotelConfigExtractor
+from src.extractors.cashiering import CashieringExtractor, BACKFILL_START_DATE
 from src.database import Database, DatabaseConnectionError
 from src.config import settings
 
@@ -49,6 +50,17 @@ async def run(arrival_start_date: str, arrival_end_date: str):
         print("Inserting data into PostgreSQL (ON CONFLICT upsert)...")
         db.insert_raw_data(reservations_data)
         print("Data insertion complete.")
+
+    # Cashiering postings: independent raw table (raw.cashiering_postings), run order does
+    # not matter relative to reservations. Backfill from BACKFILL_START_DATE to today.
+    cashiering_extractor = CashieringExtractor(client)
+    print(f"Fetching cashiering postings from {BACKFILL_START_DATE.isoformat()} to today...")
+    postings = await cashiering_extractor.fetch_postings(BACKFILL_START_DATE, date.today())
+    print(f"Fetched {len(postings)} cashiering postings.")
+    if postings:
+        print("Upserting cashiering postings (ON CONFLICT on transaction_no)...")
+        db.insert_cashiering_postings(postings)
+        print("Cashiering postings insertion complete.")
 
     db.close()
     print("Extraction process finished.")
