@@ -105,6 +105,41 @@ models:
       - name: night_amount
         description: "Per-night revenue allocation (total_amount / night_count) - estimate pending financials feature"
 
+  - name: fct_folio_line
+    description: "Fact table - one row per revenue posting (transaction_no grain). Keeps all rows including unmatched postings (reservation_id IS NULL)."
+    columns:
+      - name: fact_sk
+        description: "Surrogate key - md5(transaction_no::text)"
+        tests:
+          - unique
+          - not_null
+      - name: transaction_no
+        description: "Natural grain key - unique posting identifier from OPERA"
+        tests:
+          - not_null
+      - name: hotel_id
+        description: "Raw FK to dim_property (no relationships test - kept as raw key per additive-only design)"
+        tests:
+          - not_null
+      - name: revenue_date
+        description: "Posting date (raw FK key - no join to dim_date in model body)"
+        tests:
+          - not_null
+      - name: reservation_id
+        description: "FK to stg_reservations; nullable (unmatched postings have NULL). No relationships test — FK integrity is covered by test_ac3_reservation_fk_match_rate.sql (AC-3)."
+      - name: posted_amount
+        description: "Posted revenue amount"
+        tests:
+          - not_null
+      - name: revenue_category
+        description: "Revenue category derived in staging (Room / FnB / Tax / ServiceCharge / Other)"
+        tests:
+          - not_null
+      - name: cashier_id
+        description: "Cashier identifier (provenance pass-through)"
+      - name: reference
+        description: "Posting reference (provenance pass-through)"
+
 # Composite FK test for dim_rate - requires custom test or dbt_utils
 # Since dbt_utils is not available, we note the composite FK requirement here
 # The combination (rate_plan_code, market_code, source_of_business) should exist in dim_rate
