@@ -234,7 +234,7 @@ During /goal execution of this phase program:
 |---|---|
 | 0 — Pre-program (plan creation) | CODE DONE (this umbrella + 5 phase plans written) |
 | 01 — Extractor + raw table | ✅ VERIFIED (2026-07-18 — 32/32 pytest pass; 18,245 postings in raw.cashiering_postings; idempotency confirmed) |
-| 02 — Staging model | PLANNED |
+| 02 — Staging model | ✅ VERIFIED (2026-07-18 — dbt build PASS 6/6; 12,885 rows; 5 revenue_category values; 0 wrapper rows) |
 | 03 — fct_folio_line | PLANNED |
 | 04 — fct_reservation_night additive columns | PLANNED |
 | 05 — Dashboard wiring | PLANNED |
@@ -326,16 +326,23 @@ node .claude/skills/vc-generate-phase-program/scripts/validate-umbrella-artifact
 ## Current Execution State
 
 Last updated: 2026-07-18
-Current phase: 2 of 5
+Current phase: 3 of 5
 Phase 1 name: Extractor + raw table
 Phase 1 status: ✅ VERIFIED
 Phase 1 EVL: PASS (32/32 pytest; E2E 18,245 postings; idempotency confirmed)
 Phase 1 report: process/features/financials/active/financials_17-07-26/phase-01-cashiering-extractor_REPORT_18-07-26.md
-Next phase: Phase 2 — Staging model (`phase-02-stg-cashiering-postings_PLAN_17-07-26.md`) — Step 1 RESEARCH
+Phase 2 name: Staging model
+Phase 2 status: ✅ VERIFIED
+Phase 2 EVL: PASS (dbt build PASS 6/6; 12,885 rows; 5 revenue_category values; 0 wrapper rows)
+Phase 2 report: process/features/financials/active/financials_17-07-26/phase-02-stg-cashiering-postings_REPORT_18-07-26.md
+Next phase: Phase 3 — fct_folio_line (`phase-03-fct-folio-line_PLAN_17-07-26.md`) — Step 1 RESEARCH
 
-Validate-contract status: Phase 1 CONDITIONAL (accepted, inner-pvl: phase-01); Phase 2 pending
-Program Net Gate: Phase 1 PASS; Phase 2–5 PENDING
-Latest validator run: `cd extractor && poetry run pytest tests/ -v` — 32 passed, 0 failed (2026-07-18)
+Validate-contract status: Phase 1 CONDITIONAL (accepted, inner-pvl: phase-01); Phase 2 CONDITIONAL (accepted, inner-pvl: phase-02); Phase 3 pending
+Program Net Gate: Phase 1 PASS; Phase 2 PASS; Phase 3–5 PENDING
+Latest validator run: `cd eras_dbt && dbt build --profiles-dir .` — PASS 6/6 stg_cashiering_postings (2026-07-18)
+
+Known gaps carried forward to Phase 3:
+- AC-3 FK rate (95-pct of non-null reservation_id in stg_cashiering_postings matches stg_reservations) — Phase 3 RESEARCH must add singular dbt test to fct_folio_line checklist
 
 Loop step values: RESEARCH | INNOVATE | PLAN-SUPPLEMENT | PVL | EXECUTE | EVL | UPDATE-PROCESS
 Orchestrator rule: read "Current loop step" and "validate-contract status" before spawning any subagent. Never spawn execute-agent when loop step is RESEARCH, INNOVATE, PLAN-SUPPLEMENT, or PVL.

@@ -64,6 +64,7 @@ The `eras_dbt/` dbt project is built and running against a dev PostgreSQL instan
 |---|---|
 | `stg_reservations` | Flattens raw JSON from `raw.booking_core_reservations`; parses arrival/departure dates, rates, segments |
 | `stg_hotel_config` | Deduplicates append-only `raw.enterprise_hotel_config` via `DISTINCT ON (hotel_id) ORDER BY extracted_at DESC`; extracts `room_count` (physical_room_count) and `hotel_name` (from `raw_data->'hotelConfigInfo'->>'hotelName'`) |
+| `stg_cashiering_postings` | Filters `raw.cashiering_postings` to Revenue-type rows only (`raw_data->>'transactionType' = 'Revenue'`); excludes 9xxx Wrapper rows (`transaction_code NOT LIKE '9%'`); derives `revenue_category` from transaction_code prefix (1x=Room, 2x/3x/6x=FnB, 7x=Tax, 8x=ServiceCharge, ELSE=Other); carries `reservation_id` (JSONB path, nullable), `cashier_id`, `reference`; 12,885 rows as of 2026-07-18 backfill |
 
 ### Dimensional Models (`eras_dbt/models/dimensional/`)
 

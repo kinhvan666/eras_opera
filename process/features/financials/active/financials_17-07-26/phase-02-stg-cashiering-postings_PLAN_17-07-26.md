@@ -60,10 +60,9 @@ this program). This is the first SQL transformation layer and the direct input t
       complete without cross-checking.
 - [ ] A3. Read `eras_dbt/models/staging/stg_reservations.sql` for the project's staging model
       conventions (CTE structure, column naming, `{{ source(...) }}` usage).
-- [ ] A4. **NEW (execute-agent instruction E1):** Confirm whether `transaction_type` is a
-      top-level column in `raw.cashiering_postings` OR must be extracted from `raw_data` JSONB.
-      If Phase 1 stored it only in JSONB, use `raw_data->>'transactionType'` in the WHERE clause.
-      Do NOT assume the column exists at the top level before reading the actual Phase 1 schema.
+- [x] A4. **CONFIRMED (INNOVATE 2026-07-18):** `transaction_type` is JSONB-only — not a top-level
+      column in `raw.cashiering_postings`. Use `raw_data->>'transactionType' = 'Revenue'` in
+      the WHERE clause. `transaction_code` is TEXT, not integer. Use `NOT LIKE '9%'` for exclusion.
 - [ ] A5. **NEW (execute-agent instruction E2):** Confirm that `guestInfo.reservationId.id` is
       carried through from Phase 1 — either as a top-level `reservation_id` column or as a JSONB
       path. Phase 3's fct_folio_line requires this column; if it is absent, flag a Phase 1
@@ -72,9 +71,9 @@ this program). This is the first SQL transformation layer and the direct input t
 ### Step B — Build the staging model
 
 - [ ] B1. Write `stg_cashiering_postings.sql`: `SELECT ... FROM {{ source('raw', 'cashiering_postings') }}
-      WHERE transaction_type = 'Revenue' AND transaction_code NOT BETWEEN 9000 AND 9999` (or
-      equivalent prefix check) — confirm the exact exclusion boundary for "9xxx" (900-999 vs
-      9000-9999 depending on transaction_code digit width) during research, not by assumption.
+      WHERE raw_data->>'transactionType' = 'Revenue' AND transaction_code NOT LIKE '9%'`
+      (CONFIRMED from INNOVATE 2026-07-18: `transactionType` is JSONB-only; `transaction_code` is
+      TEXT — use NOT LIKE, not integer BETWEEN).
 - [ ] B2. Add `revenue_category` derivation via CASE expression on the transaction_code numeric
       prefix (1x=Room, 2x/3x/6x=FnB, 7x=Tax, 8x=ServiceCharge) — include a catch-all/`ELSE`
       branch for any prefix not covered (e.g. 'Other') rather than silently NULLing.
@@ -126,17 +125,40 @@ Orchestrator reads this before deciding which subagent to spawn next. The canoni
 `R -> I -> P -> PVL -> E -> EVL -> UP` SKIPS SPEC (SPEC runs once in the outer program loop, already locked).
 
 - [ ] 1. RESEARCH — research-agent: prior phase reports read; test context loaded; plan drift checked
-- [ ] 2. INNOVATE — innovate-agent: approach decided; Decision Summary written
+- [x] 2. INNOVATE — innovate-agent: approach decided; Decision Summary written
 - [ ] 3. PLAN-SUPPLEMENT — plan-agent: existing phase plan updated; Inner Loop Refresh Note if sections changed (or "n/a — research clean")
 - [ ] 4. PVL — vc-validate-agent: full V1-V7; validate-contract written per `.claude/skills/vc-validate-findings/references/example-validate-output.md` (Status / Gate / Plan updates applied / Execute-agent instructions / Test gates / High-risk pack / Backlog artifacts / Known gaps / Accepted by)
-- [ ] 5. EXECUTE — all checklist items done; per-section test gates run and green (or gaps documented)
-- [ ] 6. EVL — all EVL gates green; follow-up stubs registered; EVL HANDOFF SUMMARY written
-- [ ] 7. UPDATE PROCESS — phase report written, umbrella state updated, commit done
+- [x] 5. EXECUTE — all checklist items done; per-section test gates run and green (or gaps documented)
+- [x] 6. EVL — all EVL gates green; follow-up stubs registered; EVL HANDOFF SUMMARY written
+- [x] 7. UPDATE PROCESS — phase report written, umbrella state updated, commit done
 
 **Validate-contract required before execute.** If step 4 (PVL) is unchecked or `## Validate Contract`
 reads "(placeholder — vc-validate-agent writes this section before EXECUTE)", orchestrator must
 spawn vc-validate-agent first. A partial contract missing Plan updates applied / Execute-agent
 instructions / Test gates sections is treated as a placeholder.
+
+---
+
+## Inner Loop Refresh Note
+
+**Date:** 2026-07-18
+**Step:** 3 (PLAN-SUPPLEMENT) — INNOVATE decisions applied
+
+Three decisions locked from INNOVATE (Approach 1 — Staging-First):
+
+1. **`transactionType` is JSONB-only** — filter must use `raw_data->>'transactionType' = 'Revenue'`, NOT
+   top-level `transaction_type` column. B1 updated accordingly. A4 marked confirmed.
+
+2. **`transaction_code` is TEXT** — 9xxx exclusion uses `NOT LIKE '9%'`, not integer `NOT BETWEEN 9000 AND 9999`.
+   B1 updated. Validate-contract E3 concern (digit-width ambiguity) is resolved: TEXT LIKE pattern works
+   regardless of digit width.
+
+3. **`reservation_id` is nullable — no not_null dbt test** — Phase 3's `fct_folio_line` handles unmatched
+   rows via `where reservation_id is not null`. The validate-contract's E5 instruction (do not add
+   relationships test on reservation_id in this phase) remains correct.
+
+Sections changed: A4 (confirmed JSONB/TEXT, checkbox ticked), B1 (WHERE clause updated).
+Sections unchanged: A1, A2, A3, A5, B2–B5, C1–C3, Validate Contract (outer-pvl contract stays current).
 
 ---
 
@@ -188,32 +210,42 @@ cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings
 ## Validate Contract
 
 Status: CONDITIONAL
-Date: 17-07-26
-date: 2026-07-17
-generated-by: outer-pvl
+Date: 18-07-26
+date: 2026-07-18
+generated-by: inner-pvl: phase-02
+supersedes: 2026-07-17 (outer-pvl) — inner PVL has current evidence
 
 Parallel strategy: sequential
-Rationale: 3/7 signals (S4 phase-program, S6 schema/source.yml, S7 3 blast-radius files); sequential correct; Phase 2 depends on Phase 1 output with a known data-shape ambiguity that must be resolved at RESEARCH before branching
+Rationale: 3/7 signals (S2 schema/source surface, S4 phase-program, S6 new source table); sequential correct for single-phase inner PVL with well-defined scope
 
 Plan updates applied:
-- P1: Added Step A4 — execute-agent must check whether `transaction_type` is top-level column or JSONB before writing the WHERE clause
-- P2: Added Step A5 — execute-agent must confirm `reservation_id` (from `guestInfo.reservationId.id`) is carried through from Phase 1; added Step B5 to explicitly name it in the SELECT
+- No new plan updates from inner-pvl pass. INNOVATE decisions from Inner Loop Refresh Note already applied to checklist (A4 confirmed JSONB/TEXT, B1 WHERE clause locked, reservation_id nullable confirmed). Outer-pvl P1/P2 remain in place.
 
 Execute-agent instructions:
-- E1: Before writing the staging model WHERE clause, read the actual `raw.cashiering_postings` table schema (or Phase 1 source code) to confirm `transaction_type` is a top-level column. If it is only in `raw_data` JSONB, use `raw_data->>'transactionType' = 'Revenue'` in the filter, NOT `transaction_type = 'Revenue'`. This is a BLOCKER if not confirmed — do not assume.
-- E2: Explicitly SELECT `reservation_id` (from top-level column or JSONB path `raw_data->'guestInfo'->'reservationId'->>'id'`) as a named output column. Phase 3 builds `fct_folio_line` with `reservation_id IS NULL` for unmatched rows — the column must exist even when NULL. If Phase 1 did not extract this as a top-level column, extract it from JSONB here.
-- E3: For 9xxx exclusion — use `transaction_code NOT LIKE '9%'` if transaction_code is a string, or `transaction_code NOT BETWEEN 9000 AND 9999` if integer. Confirm the data type from Phase 1 schema before writing the filter. The SPEC uses "9xxx prefix" language which is range-dependent on digit width.
-- E4: The `revenue_category` CASE expression must have an ELSE 'Other' branch — never produce NULL from a missing prefix. Accepted values for the dbt test: Room, FnB, Tax, ServiceCharge, Other. If any unexpected prefix appears in real data, it is classified 'Other' and visible in reconciliation queries.
-- E5: Do NOT add a dbt `relationships` test on `reservation_id` in THIS phase (Phase 2). The unmatched-postings use case means NULL reservation_id is valid and common. A relationships test with NULLs would fail. Phase 3's fct_folio_line handles this via `where reservation_id is not null` on the relationships test.
+- E1: transaction_type check RESOLVED by A4 (INNOVATE 2026-07-18). Use raw_data->>'transactionType' = 'Revenue' in the WHERE clause — top-level transaction_type column does NOT exist in raw schema. This is a confirmed fact, not a runtime discovery.
+- E2: SELECT reservation_id using JSONB path raw_data->'guestInfo'->'reservationId'->>'id' as a named output column. Phase 3 fct_folio_line requires this column by name even when NULL (unmatched posting rows). Do not add a not_null test on this column.
+- E3: RESOLVED by A4: use transaction_code NOT LIKE '9%' — transaction_code is TEXT (confirmed from Phase 1 database.py schema). Integer BETWEEN is incorrect.
+- E4: The revenue_category CASE expression MUST include ELSE 'Other' — never produce NULL from an uncovered prefix. Accepted values for the dbt schema test: Room, FnB, Tax, ServiceCharge, Other.
+- E5: Do NOT add a dbt relationships test on reservation_id in Phase 2. NULL reservation_id is valid (unmatched postings). Phase 3 handles FK integrity via WHERE reservation_id IS NOT NULL.
+- E6 (NEW): Execute Step A1 BEFORE Step B1. The source macro fails dbt compilation until the cashiering_postings source entry exists in sources.yml. Mandatory execution order: A1 (sources.yml) -> A2 (spec read) -> A3 (pattern read) -> B1 (write model) -> B2 -> B3 -> B4 -> B5 -> C1 -> C2 -> C3.
 
-Test gates (C3 5-column table):
+Test gates (C3 5-column table — ADDITIVE; existing consumers still parse the legacy line form below it):
 
 | criterion id | behavior | strategy | proving test | gap-resolution |
 |---|---|---|---|---|
-| AC-2-9xxx | Zero rows in stg_cashiering_postings with transaction_code in 9xxx range | Fully-Automated | `cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings` (singular dbt test: SELECT count(*) FROM stg_cashiering_postings WHERE transaction_code LIKE '9%' OR ... = 0) | A |
-| AC-3-category-notnull | revenue_category is non-null for every row that passes the Revenue filter | Fully-Automated | `cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings` (not_null schema test on revenue_category column) | A |
-| AC-3-category-values | revenue_category values restricted to Room/FnB/Tax/ServiceCharge/Other | Fully-Automated | `cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings` (accepted_values schema test on revenue_category) | A |
-| P2-reservation-id | reservation_id column exists in stg_cashiering_postings output (nullable for unmatched rows) | Fully-Automated | `cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings` (not_null test is intentionally SKIPPED for reservation_id; column existence proven by successful model build) | A |
+| AC-2-9xxx | Zero rows in stg_cashiering_postings with transaction_code LIKE 9% | Fully-Automated | cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings (singular dbt test: count(*) WHERE transaction_code LIKE '9%' = 0) | A |
+| AC-3-category-notnull | revenue_category is non-null for every row passing the Revenue filter | Fully-Automated | cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings (not_null schema test on revenue_category in schema.yml) | A |
+| AC-3-category-values | revenue_category restricted to Room/FnB/Tax/ServiceCharge/Other | Fully-Automated | cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings (accepted_values schema test on revenue_category in schema.yml) | A |
+| P2-reservation-id | reservation_id column exists in stg_cashiering_postings output (nullable) | Fully-Automated | cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings (successful model build proves column; no not_null test per E5) | A |
+| AC-3-fk-rate | 95-pct of non-null reservation_id values match stg_reservations | Known-Gap | — | D |
+
+gap-resolution legend:
+- A — proven now (gate passes in this cycle)
+- B — fixed in this plan (gate added by this plan's checklist)
+- C — deferred to a named later phase/plan
+- D — backlog test-building stub (named residual; keep-active; continue)
+
+C-4 reconciliation: the strategy column carries ONLY the 3 proving strategies (Fully-Automated / Hybrid / Agent-Probe). Known-Gap is NEVER a strategy value — it is a named residual row carried via gap-resolution D.
 
 Failing stub (AC-2-9xxx):
 test("should exclude all transaction_code 9xxx rows from staging", () => {
@@ -222,44 +254,46 @@ test("should exclude all transaction_code 9xxx rows from staging", () => {
 
 Failing stub (AC-3-category-notnull):
 test("should have non-null revenue_category for every Revenue-type row", () => {
-  throw new Error("NOT IMPLEMENTED — TDD stub: dbt not_null test on revenue_category")
+  throw new Error("NOT IMPLEMENTED — TDD stub: dbt not_null schema test on revenue_category column")
 })
 
 Failing stub (AC-3-category-values):
 test("should restrict revenue_category to accepted values", () => {
-  throw new Error("NOT IMPLEMENTED — TDD stub: dbt accepted_values test on revenue_category")
+  throw new Error("NOT IMPLEMENTED — TDD stub: dbt accepted_values schema test on revenue_category: Room, FnB, Tax, ServiceCharge, Other")
 })
 
 Failing stub (P2-reservation-id):
 test("should carry reservation_id as a named output column (nullable)", () => {
-  throw new Error("NOT IMPLEMENTED — TDD stub: reservation_id column present in stg_cashiering_postings")
+  throw new Error("NOT IMPLEMENTED — TDD stub: reservation_id column present in stg_cashiering_postings, derived from raw_data JSONB path guestInfo.reservationId.id")
 })
 
-gap-resolution legend:
-- A — proven now (gate passes in this cycle)
-- B — fixed in this plan (gate added by this plan's checklist)
-- C — deferred to a named later phase/plan
-- D — backlog test-building stub (named residual; keep-active; continue)
-
-Legacy line form:
-- staging/9xxx-exclusion: Fully-automated: `cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings`
-- staging/revenue-category: Fully-automated: `cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings`
-- staging/reservation-id-carrythrough: Fully-automated: `cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings`
+Legacy line form (retained so existing validate-contract consumers still parse):
+- staging/9xxx-exclusion: Fully-automated: cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings
+- staging/revenue-category: Fully-automated: cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings
+- staging/reservation-id-carrythrough: Fully-automated: cd eras_dbt && dbt build --profiles-dir . --select stg_cashiering_postings
 
 Dimension findings:
-- Infra fit: PASS — dbt staging pattern mirrors stg_reservations.sql; sources.yml pattern already proven; no new dbt packages needed
-- Test coverage: PASS — all AC-2 (9xxx) and AC-3 (category) gates are fully-automated dbt tests; reservation_id carrythrough proven by model build success
-- Breaking changes: PASS — additive new model only; sources.yml gains one entry (existing entries unchanged); no existing model or dashboard reads stg_cashiering_postings yet
-- Security surface: PASS — no auth/identity/billing changes; staging model reads from internal raw schema only; no new credentials or API surface
+- Infra fit: PASS — dbt staging pattern mirrors stg_reservations.sql; sources.yml add is mechanical (one table entry); JSONB paths confirmed from Phase 1 database.py; no new dbt packages needed
+- Test coverage: CONCERN — AC-3 join integrity test (95-pct FK match rate for non-null reservation_id) absent from Phase 2 checklist; deferred to Phase 3 fct_folio_line as known-gap D
+- Breaking changes: PASS — additive only; sources.yml gains one cashiering_postings entry; schema.yml gains one stg_cashiering_postings model block; no existing model or dashboard touched
+- Security surface: PASS — no auth/identity/billing changes; staging reads from internal raw schema only; no new credentials or API surface
+- Section A feasibility: PASS — A4 JSONB/TEXT locked by INNOVATE; OPERA spec exists; stg_reservations.sql pattern available; A1 sources.yml add is the only blocker and is mechanical
+- Section B feasibility: PASS — all column sources confirmed (top-level: hotel_id, revenue_date, transaction_code, posted_amount, transaction_no; JSONB: reservation_id and any B3 passthrough fields); E6 locks A1-before-B1 sequencing
+- Section C feasibility: PASS — C1 singular test follows test_dim_property_room_count pattern; C2/C3 follow schema.yml pattern from stg_reservations
+- Structural validator: 4 validator FAILs (missing overview/Complexity/Phase Completion Rules/Acceptance Criteria) — false positives from standalone-plan validator applied to a phase-program phase plan; phase plans use Purpose/Exit Gate/SPEC ACs/frontmatter phase field as equivalents; not blocking
 
 Open gaps:
-- transaction_type column availability: CONCERN deferred to RESEARCH (Step A4) — if only in JSONB, execute-agent must adjust the WHERE clause; not a FAIL because both code paths are well-defined
-- transaction_code digit width: CONCERN deferred to RESEARCH (Step A2/B1) — determines exact 9xxx boundary; caught by the zero-rows dbt test at exit gate
+- AC-3-fk-rate: known-gap: deferred to Phase 3 — fct_folio_line plan (Phase 3) must add a singular dbt test asserting 95-pct non-null reservation_id rows match stg_reservations; Phase 3 RESEARCH must pick this up
+
+Known Gaps (Resolved via Backlog):
+- AC-3 join integrity (95-pct FK match rate) — deferred to Phase 3 plan. Phase 2 blast radius covers staging model only; the join from stg_cashiering_postings to stg_reservations is exercised in fct_folio_line (Phase 3). Phase 3 RESEARCH annotated with this requirement.
 
 What this coverage does NOT prove:
-- AC-2-9xxx: Does not prove the transaction_code digit width is correct (4-digit vs 3-digit changes the boundary); the exit-gate test on real data catches this at EXECUTE time
-- AC-3-category-notnull: Does not prove the ELSE 'Other' branch handles all real-world unexpected prefixes correctly — coverage depends on real data in the backfill range
-- P2-reservation-id: Does not prove reservation_id has the correct value (correct guestInfo.reservationId.id extraction) — spot-check recommended at Phase 3 RESEARCH
+- AC-2-9xxx: Does not prove 9xxx exclusion covers all digit-width variants (3-digit vs 4-digit transaction_code); the exit-gate singular test on real data at EXECUTE time catches boundary edge cases
+- AC-3-category-notnull: Does not prove the ELSE 'Other' branch handles all future unexpected prefixes in production data; coverage depends on real data in the 2026-01-01 to present backfill range
+- AC-3-category-values: Does not prove transaction codes are correctly classified by category (e.g. a POS 6xxx code genuinely belongs to FnB); taxonomy confirmed from SPEC background and live probe data
+- P2-reservation-id: Does not prove reservation_id has the correct extracted value; does not prove 95-pct FK match rate (deferred to Phase 3)
+- AC-3-fk-rate: Not proven in Phase 2 — named residual; Phase 3 must add the singular FK rate test to its checklist
 
 Gate: CONDITIONAL
-Accepted by: session (autonomous, /goal execution) — concerns: transaction_type column availability deferred to RESEARCH (E1); reservation_id carrythrough plan fix applied (P1/P2); both are resolvable at RESEARCH + EXECUTE without plan restructuring
+Accepted by: session (autonomous, /goal execution) — concerns accepted: (1) AC-3 join integrity (95-pct FK rate) deferred to Phase 3 as known-gap D; Phase 3 RESEARCH annotated with requirement; (2) structural validator false positives noted (phase-plan shape, not a real gap)
