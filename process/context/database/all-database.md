@@ -44,7 +44,7 @@ Read this entrypoint when:
 - choosing an SCD strategy for an attribute that changes over time
 - reviewing warehouse schema naming or layering
 
-## Current Implementation State (as of 2026-07-18)
+## Current Implementation State (as of 2026-07-19)
 
 The `eras_dbt/` dbt project is built and running against a dev PostgreSQL instance.
 
@@ -74,11 +74,13 @@ The `eras_dbt/` dbt project is built and running against a dev PostgreSQL instan
 | `dim_property` | One row per distinct hotel_id in stg_reservations | hotel_id, hotel_name, room_count | **room_count is real extracted value** from stg_hotel_config (NULL when no snapshot, never hardcoded); hotel_name also from stg_hotel_config |
 | `dim_rate` | One row per distinct rate_code | rate_code, rate_description | From stg_reservations |
 | `fct_reservation_night` | One row per reservation-night | hotel_id, date_key, rate_code, room_nights, revenue, occupancy, revpar | Primary fact; powers dashboard KPIs |
+| `fct_folio_line` | One row per cashiering posting (`transaction_no`) | fact_sk (md5), transaction_no, hotel_id, revenue_date, revenue_category, posted_amount, reservation_id (nullable FK), cashier_id, reference | Cashiering fact; 12,885 rows (2026 backfill); independently queryable for unmatched-posting reconciliation (NULL reservation_id rows preserved) |
 
 ### dbt Tests
 
 - `schema.yml` files in `staging/` and `dimensional/` carry standard `not_null` / `unique` / `relationships` tests
 - `eras_dbt/tests/test_dim_property_room_count_not_null_hotel_79017.sql` — singular test asserting dim_property.room_count IS NOT NULL for hotel_id='79017' (physical_room_count=49 confirmed via Room Config API)
+- `eras_dbt/tests/test_ac3_reservation_fk_match_rate.sql` — singular test asserting ≥95% FK match rate between non-null reservation_id in stg_cashiering_postings and stg_reservations. Currently fails (35% match — data scope gap: cashiering covers 2026; stg_reservations covers earlier window). Will pass once reservation extraction is expanded to cover 2026+.
 
 ### dbt Commands
 
