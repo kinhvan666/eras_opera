@@ -100,7 +100,7 @@ else:
     with row1[0]:
         kpi_card("Revenue", fmt_vnd(actual_revenue), actual_revenue, prior_actual_revenue)
     with row1[1]:
-        kpi_card("Occupancy", f"{current['occupancy'] * 100:.1f}%", current["occupancy"], g(prior, "occupancy"), badge=True)
+        kpi_card("Occupancy", f"{current['occupancy'] * 100:.1f}%", current["occupancy"], g(prior, "occupancy"))
     with row1[2]:
         kpi_card("ADR", fmt_vnd(actual_adr), actual_adr, prior_actual_adr)
     with row1[3]:
