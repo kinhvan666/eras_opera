@@ -38,7 +38,7 @@ tables, star schema) in PostgreSQL to power BI and reporting for hotel operation
 - **Shape:** ELT/ETL — Python extract/load from OPERA Cloud APIs → raw/staging in Postgres → dbt
   SQL models build the dimensional layer.
 
-**Project stage:** active development. Core extraction + dimensional model + dashboard are built and running. Python extractor (`extractor/`), dbt project (`eras_dbt/`), and Streamlit dashboard (`dashboard/`) all exist. Architecture decisions are documented in `process/features/booking-core/` completed plans. Financials cashiering pipeline Phase 1 complete (2026-07-18): CashieringExtractor operational, 18,245 postings in `raw.cashiering_postings`; Phases 2–5 (staging → fct_folio_line → additive fct_reservation_night columns → dashboard) in progress.
+**Project stage:** active development. Core extraction + dimensional model + dashboard are built and running. Python extractor (`extractor/`), dbt project (`eras_dbt/`), and Streamlit dashboard (`dashboard/`) all exist. Architecture decisions are documented in `process/features/booking-core/` completed plans. Financials cashiering pipeline complete (2026-07-19, 5 phases): CashieringExtractor operational (18,245 postings in `raw.cashiering_postings`), `stg_cashiering_postings` + `fct_folio_line` built, dashboard Revenue tab shows actual revenue from postings (₫8.24B actual vs ₫3.41B estimated from night_amount). Phase 4 (additive fct_reservation_night columns) BLOCKED-skipped — fct_folio_line direct query used instead. Follow-up: KPI tile update (ADR/RevPAR/Revenue tiles still use estimated data) + TRevPAR/TRevPOR metrics.
 
 ---
 

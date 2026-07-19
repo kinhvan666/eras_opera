@@ -104,6 +104,8 @@ Use `--profiles-dir .` when `eras_dbt/.user.yml` holds the credentials (gitignor
 
 - Streamlit app (`dashboard/app.py`) with Dockerfile
 - Tabs: Revenue, Trends, Segments, Pacing — reads from `analytics.dim_property`, `analytics.fct_reservation_night`, and KPI views
+- Revenue tab also reads from `analytics.fct_folio_line` for the "Actual Revenue from Postings (Cashiering)" section (`fetch_revenue_actual()` in `dashboard/data/repository.py`); query groups by `revenue_date` and `revenue_category`, sums `posted_amount`
+- Note: KPI tiles (Revenue, ADR, RevPAR) still use estimated `night_amount` from `fct_reservation_night`; true actual revenue from `fct_folio_line` is ~2.4x larger (₫8.24B vs ₫3.41B EST as of 2026-07-19 backfill). Follow-up plan needed to update KPI tiles.
 
 ---
 
