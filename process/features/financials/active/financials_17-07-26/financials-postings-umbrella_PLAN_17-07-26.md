@@ -236,8 +236,8 @@ During /goal execution of this phase program:
 | 01 — Extractor + raw table | ✅ VERIFIED (2026-07-18 — 32/32 pytest pass; 18,245 postings in raw.cashiering_postings; idempotency confirmed) |
 | 02 — Staging model | ✅ VERIFIED (2026-07-18 — dbt build PASS 6/6; 12,885 rows; 5 revenue_category values; 0 wrapper rows) |
 | 03 — fct_folio_line | ✅ VERIFIED (2026-07-19 — dbt build PASS 8/8; 12,885 rows; AC-3 known-gap: data scope, not model bug) |
-| 04 — fct_reservation_night additive columns | PLANNED |
-| 05 — Dashboard wiring | PLANNED |
+| 04 — fct_reservation_night additive columns | BLOCKED-skipped (2026-07-19 — user decision: fct_folio_line already has Room/FnB/Tax/ServiceCharge breakdown; additive columns not needed; ADR stays on night_amount) |
+| 05 — Dashboard wiring | ✅ VERIFIED (2026-07-19 — AC-5-import PASS, AC-5-schema PASS, AC-8 PASS; visual verify PASS: ₫8,375,541,915 total matches DB sum; all 5 revenue categories rendered) |
 
 Status values: PLANNED | CODE DONE | TESTING | VERIFIED | BLOCKED | COMPLETE
 
@@ -326,7 +326,7 @@ node .claude/skills/vc-generate-phase-program/scripts/validate-umbrella-artifact
 ## Current Execution State
 
 Last updated: 2026-07-19
-Current phase: 4 of 5
+Current phase: PROGRAM COMPLETE (5 of 5 phases done; Phase 4 BLOCKED-skipped by user decision)
 Phase 1 name: Extractor + raw table
 Phase 1 status: ✅ VERIFIED
 Phase 1 EVL: PASS (32/32 pytest; E2E 18,245 postings; idempotency confirmed)
@@ -339,17 +339,27 @@ Phase 3 name: fct_folio_line
 Phase 3 status: ✅ VERIFIED
 Phase 3 EVL: PASS=8/8 dbt build (fct_folio_line unique+notnull); AC-3 KNOWN-GAP (data scope — 35% match rate vs 95% threshold; needs reservation re-extraction for 2026 range; not a model bug)
 Phase 3 report: process/features/financials/active/financials_17-07-26/phase-03-fct-folio-line_REPORT_19-07-26.md
-Next phase: Phase 4 — fct_reservation_night additive columns (`phase-04-fct-reservation-night-additive_PLAN_17-07-26.md`) — Step 1 RESEARCH
+Phase 4 name: fct_reservation_night additive columns
+Phase 4 status: BLOCKED-skipped (2026-07-19 — user decision: fct_folio_line already has per-category breakdown; additive columns on fct_reservation_night not needed)
+Phase 5 name: Dashboard wiring
+Phase 5 status: ✅ VERIFIED (2026-07-19)
+Phase 5 EVL: PASS — AC-5-import PASS, AC-5-schema PASS, AC-8 PASS; visual verify PASS: ₫8,375,541,915 total matches DB sum; all 5 revenue categories rendered; negative bars = OPERA correction postings (expected)
+Phase 5 report: process/features/financials/active/financials_17-07-26/phase-05-dashboard-revenue-actual_REPORT_19-07-26.md
+Next phase: NONE — program complete. Follow-up work: KPI tile update (revenue/ADR/RevPAR tiles currently use estimated night_amount; actual revenue from fct_folio_line is ~2.4x larger — ₫8.24B vs ₫3.41B EST). New plan needed for that follow-up.
 
-Validate-contract status: Phase 1 CONDITIONAL (accepted, inner-pvl: phase-01); Phase 2 CONDITIONAL (accepted, inner-pvl: phase-02); Phase 3 CONDITIONAL (accepted, inner-pvl: phase-03); Phase 4 pending
-Program Net Gate: Phase 1 PASS; Phase 2 PASS; Phase 3 PASS (AC-3 known-gap on record); Phases 4–5 PENDING
-Latest validator run: `cd eras_dbt && dbt build --profiles-dir . --select fct_folio_line` — PASS 8/8 (2026-07-19)
+Validate-contract status: Phase 1 CONDITIONAL (accepted, inner-pvl: phase-01); Phase 2 CONDITIONAL (accepted, inner-pvl: phase-02); Phase 3 CONDITIONAL (accepted, inner-pvl: phase-03); Phase 4 BLOCKED-skipped (no contract); Phase 5 CONDITIONAL (accepted, inner-pvl: phase-05)
+Program Net Gate: Phase 1 PASS; Phase 2 PASS; Phase 3 PASS (AC-3 known-gap on record); Phase 4 BLOCKED-skipped; Phase 5 PASS (visual verify confirmed)
 
-Known gaps carried forward to Phase 4:
-- AC-3 FK rate: reservation extraction must cover 2026-01-01+ range before Phase 4 aggregation can be validated accurately. Phase 4 RESEARCH should address this (either expand extraction or set AC-3 test severity=warn for the data-gap period).
+Key finding (Phase 5 verify): Revenue KPI tile shows ₫3.41B (estimated from night_amount); true actual revenue = ₫8.24B (fct_folio_line excl. Tax). Understatement ~2.4x. TRevPAR and TRevPOR metrics are now computable but not yet built. FnB ₫4.5B is legitimate large group/event business (META EVENT TRAVEL etc., 564 covers/₫282M per event). Negative revenue bars = OPERA correction postings, expected behavior.
+
+Known gaps carried forward to follow-up plan:
+- AC-3 FK rate: 35% reservation FK match; needs reservation re-extraction for 2026-01-01+ range
+- KPI tiles (Revenue, ADR, RevPAR) still use estimated night_amount — require separate follow-up plan
+- Dashboard automated rendering tests: no pytest suite for Streamlit UI (structural gap)
+- TRevPAR / TRevPOR: new metrics now possible but not yet built
 
 Loop step values: RESEARCH | INNOVATE | PLAN-SUPPLEMENT | PVL | EXECUTE | EVL | UPDATE-PROCESS
-Orchestrator rule: read "Current loop step" and "validate-contract status" before spawning any subagent. Never spawn execute-agent when loop step is RESEARCH, INNOVATE, PLAN-SUPPLEMENT, or PVL.
+Program status: COMPLETE. Task folder remains in active/ pending follow-up KPI tile work.
 
 Note: The Stable Program Goal above is fixed. This section is the only part that changes — update-process-agent rewrites it after every phase closeout (overwrite, not append — git history is the audit log).
 
