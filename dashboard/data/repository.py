@@ -162,6 +162,58 @@ def fetch_revenue_actual_summary(start_date, end_date, hotel_id=None):
     return current_rev, prior_rev
 
 
+ROOM_REVENUE_SQL = """
+    SELECT COALESCE(SUM(posted_amount), 0) AS room_revenue
+    FROM analytics.fct_folio_line
+    WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
+      AND revenue_category = 'Room'
+      AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
+"""
+
+ROOM_NIGHTS_SQL = """
+    SELECT COUNT(*) AS room_nights
+    FROM analytics.fct_reservation_night
+    WHERE business_date BETWEEN %(start_date)s AND %(end_date)s
+      AND reservation_status NOT IN ('Cancelled', 'NoShow')
+      AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
+"""
+
+ROOM_COUNT_SQL = """
+    SELECT COALESCE(MAX(room_count), 0) AS room_count
+    FROM analytics.dim_property
+    WHERE (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
+"""
+
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def _fetch_adr_revpar_inputs(start_date, end_date, hotel_id=None):
+    with psycopg2.connect(DATABASE_URL) as conn:
+        room_rev = pd.read_sql(ROOM_REVENUE_SQL, conn,
+            params={"start_date": start_date, "end_date": end_date, "hotel_id": hotel_id}
+        )["room_revenue"].iloc[0]
+        room_nights = pd.read_sql(ROOM_NIGHTS_SQL, conn,
+            params={"start_date": start_date, "end_date": end_date, "hotel_id": hotel_id}
+        )["room_nights"].iloc[0]
+        room_count = pd.read_sql(ROOM_COUNT_SQL, conn,
+            params={"hotel_id": hotel_id}
+        )["room_count"].iloc[0]
+    days = (end_date - start_date).days + 1
+    adr = float(room_rev) / room_nights if room_nights > 0 else None
+    revpar = float(room_rev) / (room_count * days) if room_count > 0 else None
+    return adr, revpar
+
+
+def fetch_adr_revpar_actual_summary(start_date, end_date, hotel_id=None):
+    """Actual ADR and RevPAR for current and prior period. Same 7d/30d shift as fetch_kpi_summary."""
+    range_days = (end_date - start_date).days + 1
+    shift = timedelta(days=7 if range_days <= 14 else 30)
+    curr_adr, curr_revpar = _fetch_adr_revpar_inputs(start_date, end_date, hotel_id)
+    prior_adr, prior_revpar = _fetch_adr_revpar_inputs(
+        start_date - shift, end_date - shift, hotel_id
+    )
+    return curr_adr, curr_revpar, prior_adr, prior_revpar
+
+
 @st.cache_data(ttl=CACHE_TTL_SECONDS)
 def fetch_kpi_pacing(start_date, end_date, hotel_id=None):
     with psycopg2.connect(DATABASE_URL) as conn:

@@ -17,7 +17,12 @@ def fmt_vnd(val):
     if abs(val) >= 1_000:
         return f"₫{val/1_000:.0f}K"
     return f"₫{val:,.0f}"
-from data.repository import fetch_kpi_summary, fetch_properties, fetch_revenue_actual_summary
+from data.repository import (
+    fetch_kpi_summary,
+    fetch_properties,
+    fetch_revenue_actual_summary,
+    fetch_adr_revpar_actual_summary,
+)
 from ui.components import kpi_card
 from ui.tabs.revenue import draw as draw_revenue
 from ui.tabs.trends import draw as draw_trends
@@ -79,6 +84,12 @@ try:
 except Exception:
     actual_revenue, prior_actual_revenue = None, None
 
+try:
+    actual_adr, actual_revpar, prior_actual_adr, prior_actual_revpar = \
+        fetch_adr_revpar_actual_summary(start_date, end_date, hotel_id)
+except Exception:
+    actual_adr, actual_revpar, prior_actual_adr, prior_actual_revpar = None, None, None, None
+
 if current is None:
     st.info("No reservation data in the selected range.")
 else:
@@ -91,9 +102,9 @@ else:
     with row1[1]:
         kpi_card("Occupancy", f"{current['occupancy'] * 100:.1f}%", current["occupancy"], g(prior, "occupancy"), badge=True)
     with row1[2]:
-        kpi_card("ADR", fmt_vnd(current['adr']), current["adr"], g(prior, "adr"), badge=True)
+        kpi_card("ADR", fmt_vnd(actual_adr), actual_adr, prior_actual_adr)
     with row1[3]:
-        kpi_card("RevPAR", fmt_vnd(current['revpar']), current["revpar"], g(prior, "revpar"), badge=True)
+        kpi_card("RevPAR", fmt_vnd(actual_revpar), actual_revpar, prior_actual_revpar)
     with row1[4]:
         kpi_card("Reservations", f"{current['reservations']:,.0f}", current["reservations"], g(prior, "reservations"))
 
