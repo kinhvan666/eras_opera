@@ -17,7 +17,7 @@ def fmt_vnd(val):
     if abs(val) >= 1_000:
         return f"₫{val/1_000:.0f}K"
     return f"₫{val:,.0f}"
-from data.repository import fetch_kpi_summary, fetch_properties
+from data.repository import fetch_kpi_summary, fetch_properties, fetch_revenue_actual_summary
 from ui.components import kpi_card
 from ui.tabs.revenue import draw as draw_revenue
 from ui.tabs.trends import draw as draw_trends
@@ -74,6 +74,11 @@ except Exception as e:
     current, prior = None, None
     st.error(f"Could not load KPIs: {e}")
 
+try:
+    actual_revenue, prior_actual_revenue = fetch_revenue_actual_summary(start_date, end_date, hotel_id)
+except Exception:
+    actual_revenue, prior_actual_revenue = None, None
+
 if current is None:
     st.info("No reservation data in the selected range.")
 else:
@@ -82,7 +87,7 @@ else:
 
     row1 = st.columns(5)
     with row1[0]:
-        kpi_card("Revenue", fmt_vnd(current['total_revenue']), current["total_revenue"], g(prior, "total_revenue"), badge=True)
+        kpi_card("Revenue", fmt_vnd(actual_revenue), actual_revenue, prior_actual_revenue)
     with row1[1]:
         kpi_card("Occupancy", f"{current['occupancy'] * 100:.1f}%", current["occupancy"], g(prior, "occupancy"), badge=True)
     with row1[2]:

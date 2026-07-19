@@ -134,6 +134,34 @@ def fetch_revenue_actual(start_date, end_date, hotel_id=None):
         )
 
 
+REVENUE_ACTUAL_KPI_SQL = """
+    SELECT SUM(posted_amount) AS revenue
+    FROM analytics.fct_folio_line
+    WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
+      AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
+      AND revenue_category != 'Tax'
+"""
+
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def _fetch_revenue_actual_scalar(start_date, end_date, hotel_id=None):
+    with psycopg2.connect(DATABASE_URL) as conn:
+        df = pd.read_sql(
+            REVENUE_ACTUAL_KPI_SQL, conn,
+            params={"start_date": start_date, "end_date": end_date, "hotel_id": hotel_id}
+        )
+    return df["revenue"].iloc[0] if not df.empty else 0.0
+
+
+def fetch_revenue_actual_summary(start_date, end_date, hotel_id=None):
+    """Actual revenue KPI (excl. Tax) for current and prior period. Same shift logic as fetch_kpi_summary."""
+    range_days = (end_date - start_date).days + 1
+    shift = timedelta(days=7 if range_days <= 14 else 30)
+    current_rev = _fetch_revenue_actual_scalar(start_date, end_date, hotel_id)
+    prior_rev = _fetch_revenue_actual_scalar(start_date - shift, end_date - shift, hotel_id)
+    return current_rev, prior_rev
+
+
 @st.cache_data(ttl=CACHE_TTL_SECONDS)
 def fetch_kpi_pacing(start_date, end_date, hotel_id=None):
     with psycopg2.connect(DATABASE_URL) as conn:
