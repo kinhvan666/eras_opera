@@ -2,7 +2,7 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
-from data.repository import fetch_kpi_daily, fetch_revenue_breakdown
+from data.repository import fetch_kpi_daily, fetch_revenue_breakdown, fetch_revenue_actual
 from ui.components import chart_wrapper
 
 BLUE  = "#0B5ED7"
@@ -105,3 +105,22 @@ def draw(start_date, end_date, hotel_id=None):
             st.altair_chart(_hbar(room, "revenue", "room_type", "#6F42C1",
                                   "Revenue ₫", "Room Type"),
                             use_container_width=True)
+
+    st.divider()
+
+    # ── Actual Revenue from Cashiering Postings ─────────────────────────────
+    st.subheader("Actual Revenue from Postings (Cashiering)")
+    st.caption("Real charges posted to folios. Differs from estimated room revenue above which uses booking data.")
+    df_actual = fetch_revenue_actual(start_date, end_date, hotel_id)
+    if df_actual is None or df_actual.empty:
+        st.info("No posting data for this date range.")
+    else:
+        st.metric("Total (₫)", f"₫{df_actual['posted_amount'].sum():,.0f}")
+        chart = alt.Chart(df_actual).mark_bar().encode(
+            x=alt.X("revenue_date:T", title="Date"),
+            y=alt.Y("sum(posted_amount):Q", title="Revenue (₫)"),
+            color=alt.Color("revenue_category:N", title="Category"),
+            tooltip=["revenue_date:T", "revenue_category:N", "posted_amount:Q"],
+        )
+        with chart_wrapper("Actual Revenue by Category", height=300):
+            st.altair_chart(chart, use_container_width=True)

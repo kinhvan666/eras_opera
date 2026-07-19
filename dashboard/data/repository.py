@@ -115,6 +115,25 @@ def fetch_kpi_daily_segmented(start_date, end_date, hotel_id=None, segment_col=N
         return pd.read_sql(sql, conn, params={"start_date": start_date, "end_date": end_date, "hotel_id": hotel_id})
 
 
+REVENUE_ACTUAL_SQL = """
+    SELECT revenue_date, revenue_category, SUM(posted_amount) AS posted_amount
+    FROM analytics.fct_folio_line
+    WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
+      AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
+    GROUP BY revenue_date, revenue_category
+    ORDER BY revenue_date, revenue_category
+"""
+
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def fetch_revenue_actual(start_date, end_date, hotel_id=None):
+    with psycopg2.connect(DATABASE_URL) as conn:
+        return pd.read_sql(
+            REVENUE_ACTUAL_SQL, conn,
+            params={"start_date": start_date, "end_date": end_date, "hotel_id": hotel_id}
+        )
+
+
 @st.cache_data(ttl=CACHE_TTL_SECONDS)
 def fetch_kpi_pacing(start_date, end_date, hotel_id=None):
     with psycopg2.connect(DATABASE_URL) as conn:
