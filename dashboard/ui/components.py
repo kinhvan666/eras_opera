@@ -28,4 +28,4 @@ def kpi_card(label, value, current=None, prior=None, fmt="{:.1f}", badge=None, h
 
 def chart_wrapper(title, height=350):
     st.markdown(f"**{title}**")
-    return st.container(border=True)
+    return st.container(height=height, border=True)

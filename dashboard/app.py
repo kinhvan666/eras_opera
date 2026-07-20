@@ -58,7 +58,7 @@ st.markdown(f"""
     <span style="font-size:22px;font-weight:700;color:#1E40AF;letter-spacing:-0.3px">PMS Dashboard</span>
   </div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-    <a href="?_refresh=1" style="display:inline-block;padding:4px 12px;border:1px solid #DEE2E6;border-radius:6px;background:#fff;color:#374151;font-size:16px;text-decoration:none;line-height:1.5" title="Tải lại dữ liệu mới nhất">↻</a>
+    <a href="?_refresh=1" target="_self" style="display:inline-block;padding:4px 12px;border:1px solid #DEE2E6;border-radius:6px;background:#fff;color:#374151;font-size:16px;text-decoration:none;line-height:1.5" title="Tải lại dữ liệu mới nhất">↻</a>
     <span style="font-size:11px;color:#9CA3AF;font-style:italic">Data as of {as_of_str}</span>
   </div>
 </div>

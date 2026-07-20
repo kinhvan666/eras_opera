@@ -64,6 +64,22 @@ footer, footer * {
   }
 }
 
+
+/* Fix toolbar clip in st.container(height=...) scroll containers.
+   Directly override top so toolbar sits inside the container regardless of inner spacing. */
+[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"] [data-testid="stElementToolbar"] {
+    top: 4px !important;
+    z-index: 100 !important;
+}
+
+/* Hide Vega-Lite's own toolbar (⋯) — overlaps Streamlit toolbar; not needed in dashboard */
+.vega-embed > details {
+    display: none !important;
+}
+.vega-embed > details[open] > summary {
+    opacity: 1 !important;
+}
+
 .kpi-badge-est {
   background: var(--badge-estimated-bg);
   color: var(--badge-estimated-text);
