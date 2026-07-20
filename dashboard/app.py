@@ -49,28 +49,24 @@ st.divider()
 
 # Row 2: Filters — left-aligned
 today = date.today()
-if "start_date" not in st.session_state:
-    st.session_state["start_date"] = today - timedelta(days=DEFAULT_DATE_RANGE_DAYS)
-if "end_date" not in st.session_state:
-    st.session_state["end_date"] = today
 
 p0, p1, p2, p3, _ = st.columns([0.7, 0.7, 0.7, 0.7, 6])
 with p0:
     if st.button("30D", use_container_width=True):
-        st.session_state["start_date"] = today - timedelta(days=30)
-        st.session_state["end_date"] = today
+        st.session_state["from_input"] = today - timedelta(days=30)
+        st.session_state["to_input"] = today
 with p1:
     if st.button("90D", use_container_width=True):
-        st.session_state["start_date"] = today - timedelta(days=90)
-        st.session_state["end_date"] = today
+        st.session_state["from_input"] = today - timedelta(days=90)
+        st.session_state["to_input"] = today
 with p2:
     if st.button("MTD", use_container_width=True):
-        st.session_state["start_date"] = today.replace(day=1)
-        st.session_state["end_date"] = today
+        st.session_state["from_input"] = today.replace(day=1)
+        st.session_state["to_input"] = today
 with p3:
     if st.button("YTD", use_container_width=True):
-        st.session_state["start_date"] = today.replace(month=1, day=1)
-        st.session_state["end_date"] = today
+        st.session_state["from_input"] = today.replace(month=1, day=1)
+        st.session_state["to_input"] = today
 
 c_prop, c_from, c_to, c_refresh, _ = st.columns([3, 1.5, 1.5, 0.6, 2])
 
@@ -87,11 +83,9 @@ except Exception as e:
 with c_prop:
     property_label = st.selectbox("Property", list(prop_map.keys()))
 with c_from:
-    start_date = st.date_input("From", value=st.session_state["start_date"], key="from_input")
-    st.session_state["start_date"] = start_date
+    start_date = st.date_input("From", value=today - timedelta(days=DEFAULT_DATE_RANGE_DAYS), key="from_input")
 with c_to:
-    end_date = st.date_input("To", value=st.session_state["end_date"], key="to_input")
-    st.session_state["end_date"] = end_date
+    end_date = st.date_input("To", value=today, key="to_input")
 with c_refresh:
     st.markdown('<div style="height:28px"></div>', unsafe_allow_html=True)
     if st.button("↻", help="Refresh data"):
