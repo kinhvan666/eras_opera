@@ -57,7 +57,7 @@ def draw(start_date, end_date, hotel_id=None):
 
     by_month = st.radio(
         "View", ["By Day", "By Month"],
-        horizontal=True, label_visibility="collapsed", key="rev_tab_view"
+        index=1, horizontal=True, label_visibility="collapsed", key="rev_tab_view"
     ) == "By Month"
 
     if df_actual is not None and not df_actual.empty:
