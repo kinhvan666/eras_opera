@@ -6,9 +6,8 @@ from data.repository import fetch_kpi_daily
 from ui.components import chart_wrapper
 
 # Hex colors (CSS vars don't work inside Vega-Lite/SVG)
-BLUE   = "#0B5ED7"
-GREEN  = "#157347"
-RED    = "#DC3545"
+BLUE   = "#1D4ED8"
+AMBER  = "#F59E0B"
 GRAY   = "#ADB5BD"
 
 VND_LABEL_EXPR = (
@@ -17,6 +16,13 @@ VND_LABEL_EXPR = (
     "datum.value >= 1e3 ? format(datum.value / 1e3, '.0f') + 'K' : "
     "format(datum.value, ',.0f')"
 )
+
+
+def _fmt(v):
+    if v >= 1e9: return f"{v/1e9:.2f}B"
+    if v >= 1e6: return f"{v/1e6:.0f}M"
+    if v >= 1e3: return f"{v/1e3:.0f}K"
+    return f"{v:,.0f}"
 
 
 def _monthly(df):
@@ -50,6 +56,8 @@ def draw(start_date, end_date, hotel_id=None):
 
     if by_month:
         mdf = _monthly(df)
+        mdf["_rev_label"] = mdf["total_revenue"].apply(_fmt)
+        mdf["_adr_label"] = mdf["adr"].apply(lambda v: _fmt(v) if pd.notna(v) else "")
         x_field = alt.X("month:N", title="Month", sort=list(mdf["month"]))
         x_tooltip = alt.Tooltip("month:N", title="Month")
         src = mdf
@@ -72,7 +80,7 @@ def draw(start_date, end_date, hotel_id=None):
             ).properties(height=280)
             if by_month:
                 labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=10).encode(
-                    text=alt.Text("total_revenue:Q", format="~s")
+                    text=alt.Text("_rev_label:N")
                 )
                 bars = bars + labels
             st.altair_chart(bars, use_container_width=True)
@@ -121,16 +129,16 @@ def draw(start_date, end_date, hotel_id=None):
                     tooltip=[x_tooltip, alt.Tooltip("adr:Q", format=",.0f", title="ADR ₫")],
                 )
                 st.altair_chart(
-                    (base.mark_line(color=GREEN, strokeWidth=2)
-                     + base.mark_point(color=GREEN, size=60, filled=True)
+                    (base.mark_line(color=BLUE, strokeWidth=2)
+                     + base.mark_point(color=BLUE, size=60, filled=True)
                      + base.mark_text(dy=-12, fontSize=10).encode(
-                         text=alt.Text("adr:Q", format="~s")
+                         text=alt.Text("_adr_label:N")
                      )).properties(height=280),
                     use_container_width=True,
                 )
             else:
                 st.altair_chart(
-                    alt.Chart(src).mark_bar(color=GREEN, opacity=0.8,
+                    alt.Chart(src).mark_bar(color=BLUE, opacity=0.8,
                                              cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
                         x=x_field,
                         y=alt.Y("adr:Q", title="ADR (₫)", axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
@@ -151,8 +159,8 @@ def draw(start_date, end_date, hotel_id=None):
                     tooltip=[x_tooltip, alt.Tooltip("cancellation_rate:Q", format=".1%", title="Canc. Rate")],
                 )
                 st.altair_chart(
-                    (base.mark_line(color=RED, strokeWidth=2)
-                     + base.mark_point(color=RED, size=60, filled=True)
+                    (base.mark_line(color=AMBER, strokeWidth=2)
+                     + base.mark_point(color=AMBER, size=60, filled=True)
                      + base.mark_text(dy=-12, fontSize=10).encode(
                          text=alt.Text("cancellation_rate:Q", format=".1%")
                      )).properties(height=280),
@@ -160,7 +168,7 @@ def draw(start_date, end_date, hotel_id=None):
                 )
             else:
                 st.altair_chart(
-                    alt.Chart(src).mark_bar(color=RED, opacity=0.75,
+                    alt.Chart(src).mark_bar(color=AMBER, opacity=0.75,
                                              cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
                         x=x_field,
                         y=alt.Y("cancellation_rate:Q", title="Cancellation Rate",

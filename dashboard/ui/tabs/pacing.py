@@ -7,10 +7,10 @@ import streamlit as st
 from data.repository import fetch_kpi_pacing, fetch_kpi_pickup
 from ui.components import chart_wrapper
 
-BLUE  = "#0B5ED7"
-GREEN = "#157347"
-RED   = "#DC3545"
-GRAY  = "#ADB5BD"
+BLUE          = "#1D4ED8"
+SEMANTIC_POS  = "#059669"
+SEMANTIC_NEG  = "#DC2626"
+GRAY          = "#ADB5BD"
 
 
 def draw(start_date, end_date, hotel_id=None):
@@ -103,7 +103,7 @@ def draw(start_date, end_date, hotel_id=None):
                             y=alt.Y("Metric:N", sort=["Revenue", "RevPAR", "ADR", "Occupancy"], title=None),
                             x=alt.X("Pace:Q", title="Pace vs Prior Year (%)", axis=alt.Axis(format="+.0f")),
                             color=alt.Color("Status:N",
-                                scale=alt.Scale(domain=["Ahead", "Behind"], range=[GREEN, RED]),
+                                scale=alt.Scale(domain=["Ahead", "Behind"], range=[SEMANTIC_POS, SEMANTIC_NEG]),
                                 legend=None),
                             tooltip=[alt.Tooltip("Metric:N"), alt.Tooltip("Pace:Q", format="+.1f", title="Pace %")],
                         ).properties(height=200),
