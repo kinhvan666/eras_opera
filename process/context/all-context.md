@@ -220,6 +220,7 @@ ErasOpera/
 - **Naming:** follow Python (`snake_case`) and dbt (`snake_case` models, `stg_`/`dim_`/`fct_`
   prefixes) conventions — established and in use.
 - **Run extractor:** `cd extractor && poetry run python -m src` (runs ReservationExtractor, HotelConfigExtractor, and CashieringExtractor against OPERA Cloud; writes to raw Postgres tables: `raw.booking_core_reservations`, `raw.enterprise_hotel_config`, `raw.cashiering_postings`)
+- **Run extractor LOCALLY (outside Docker):** the `.env` `DATABASE_URL` uses host `postgres` (Docker network service name), which does NOT resolve when running the extractor on the host. Override before running: `$env:DATABASE_URL="postgresql://user:password@localhost:5434/erg_opera_data"` (published port 5434). Confirmed needed during cashiering-backfill execution 2026-07-20.
 - **Run tests:** `cd extractor && poetry run pytest tests/ -v`
 - **Run dbt:** `cd eras_dbt && dbt build --profiles-dir .`
 
