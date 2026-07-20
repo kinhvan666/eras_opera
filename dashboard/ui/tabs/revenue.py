@@ -5,26 +5,28 @@ import streamlit as st
 from data.repository import fetch_revenue_breakdown, fetch_revenue_actual
 from ui.components import chart_wrapper
 
-BLUE   = "#0B5ED7"
-GREEN  = "#157347"
-AMBER  = "#F59E0B"
-PURPLE = "#8B5CF6"
+# Stacked chart — Option 2 Analogous/Categorical
+ROOM_COLOR    = "#2563EB"  # Deep Blue
+FNB_COLOR     = "#0D9488"  # Teal
+SC_COLOR      = "#F59E0B"  # Amber
+OTHER_COLOR   = "#6B7280"  # Cool Gray
+SUB_BAR_COLOR = "#2563EB"  # single color for all sub-charts
 
 # Vega-Lite expression: abbreviate VND values on axes
 VND_LABEL_EXPR = (
-    "datum.value >= 1e9 ? format(datum.value / 1e9, '.1f') + ' Tỷ' : "
-    "datum.value >= 1e6 ? format(datum.value / 1e6, '.0f') + ' Tr' : "
+    "datum.value >= 1e9 ? format(datum.value / 1e9, '.1f') + 'B' : "
+    "datum.value >= 1e6 ? format(datum.value / 1e6, '.0f') + 'M' : "
     "datum.value >= 1e3 ? format(datum.value / 1e3, '.0f') + 'K' : "
     "format(datum.value, ',.0f')"
 )
 
 CATEGORY_ORDER  = ["Room", "FnB", "ServiceCharge", "Other"]
-CATEGORY_COLORS = [BLUE, GREEN, AMBER, PURPLE]
+CATEGORY_COLORS = [ROOM_COLOR, FNB_COLOR, SC_COLOR, OTHER_COLOR]
 
 
 def _fmt_label(v):
-    if v >= 1e9: return f"₫{v/1e9:.1f} Tỷ"
-    if v >= 1e6: return f"₫{v/1e6:.0f} Tr"
+    if v >= 1e9: return f"₫{v/1e9:.1f}B"
+    if v >= 1e6: return f"₫{v/1e6:.0f}M"
     if v >= 1e3: return f"₫{v/1e3:.0f}K"
     return f"₫{v:,.0f}"
 
@@ -55,9 +57,11 @@ def draw(start_date, end_date, hotel_id=None):
     # ── Revenue by Day — actual, stacked by category ────────────────────────
     df_actual = fetch_revenue_actual(start_date, end_date, hotel_id)
 
+    if "rev_tab_view" not in st.session_state:
+        st.session_state["rev_tab_view"] = "By Month"
     by_month = st.radio(
-        "View", ["By Day", "By Month"],
-        index=1, horizontal=True, label_visibility="collapsed", key="rev_tab_view"
+        "View", ["By Month", "By Day"],
+        horizontal=True, label_visibility="collapsed", key="rev_tab_view"
     ) == "By Month"
 
     if df_actual is not None and not df_actual.empty:
@@ -79,7 +83,7 @@ def draw(start_date, end_date, hotel_id=None):
             x_tooltip = alt.Tooltip("revenue_date:T", title="Date",
                                      format="%d/%m/%Y")
 
-        title = "Revenue by Month (Actual)" if by_month else "Revenue by Day (Actual)"
+        title = "Revenue by Month" if by_month else "Revenue by Day"
         with chart_wrapper(title, height=360):
             bars = alt.Chart(src).mark_bar(
                 cornerRadiusTopLeft=2, cornerRadiusTopRight=2
@@ -118,7 +122,7 @@ def draw(start_date, end_date, hotel_id=None):
                   .sum().sort_values("revenue", ascending=False))
         with chart_wrapper("Revenue by Market Segment", height=300):
             st.altair_chart(
-                _hbar(seg, "revenue", "market_code", BLUE, "Revenue ₫", "Segment"),
+                _hbar(seg, "revenue", "market_code", SUB_BAR_COLOR, "Revenue ₫", "Segment"),
                 use_container_width=True,
             )
 
@@ -127,7 +131,7 @@ def draw(start_date, end_date, hotel_id=None):
                    .sum().sort_values("revenue", ascending=False))
         with chart_wrapper("Revenue by Rate Plan", height=300):
             st.altair_chart(
-                _hbar(rate, "revenue", "rate_plan_code", GREEN,
+                _hbar(rate, "revenue", "rate_plan_code", SUB_BAR_COLOR,
                       "Revenue ₫", "Rate Plan"),
                 use_container_width=True,
             )
@@ -137,7 +141,7 @@ def draw(start_date, end_date, hotel_id=None):
                    .sum().sort_values("revenue", ascending=False))
         with chart_wrapper("Revenue by Room Type", height=300):
             st.altair_chart(
-                _hbar(room, "revenue", "room_type", PURPLE,
+                _hbar(room, "revenue", "room_type", SUB_BAR_COLOR,
                       "Revenue ₫", "Room Type"),
                 use_container_width=True,
             )

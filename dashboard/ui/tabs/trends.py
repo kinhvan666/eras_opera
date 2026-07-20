@@ -12,8 +12,8 @@ RED    = "#DC3545"
 GRAY   = "#ADB5BD"
 
 VND_LABEL_EXPR = (
-    "datum.value >= 1e9 ? format(datum.value / 1e9, '.1f') + ' Tỷ' : "
-    "datum.value >= 1e6 ? format(datum.value / 1e6, '.0f') + ' Tr' : "
+    "datum.value >= 1e9 ? format(datum.value / 1e9, '.1f') + 'B' : "
+    "datum.value >= 1e6 ? format(datum.value / 1e6, '.0f') + 'M' : "
     "datum.value >= 1e3 ? format(datum.value / 1e3, '.0f') + 'K' : "
     "format(datum.value, ',.0f')"
 )
@@ -43,7 +43,9 @@ def draw(start_date, end_date, hotel_id=None):
     df = df.copy()
     df["business_date"] = df["business_date"].astype(str)
 
-    by_month = st.radio("View", ["By Day", "By Month"],
+    if "trend_view" not in st.session_state:
+        st.session_state["trend_view"] = "By Month"
+    by_month = st.radio("View", ["By Month", "By Day"],
                         horizontal=True, label_visibility="collapsed", key="trend_view") == "By Month"
 
     if by_month:

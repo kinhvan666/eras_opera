@@ -244,3 +244,17 @@ def fetch_kpi_pickup(hotel_id=None):
             conn,
             params={"hotel_id": hotel_id},
         )
+
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def fetch_data_as_of():
+    """Return the latest revenue_date in fct_folio_line as a date object."""
+    with psycopg2.connect(DATABASE_URL) as conn:
+        row = pd.read_sql(
+            "SELECT MAX(revenue_date) AS as_of FROM analytics.fct_folio_line",
+            conn,
+        )
+    val = row["as_of"].iloc[0]
+    if pd.isna(val):
+        return None
+    return pd.Timestamp(val).date()

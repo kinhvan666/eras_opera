@@ -11,9 +11,9 @@ def fmt_vnd(val):
     if val is None:
         return "—"
     if abs(val) >= 1_000_000_000:
-        return f"₫{val/1_000_000_000:.2f} Tỷ"
+        return f"₫{val/1_000_000_000:.2f}B"
     if abs(val) >= 1_000_000:
-        return f"₫{val/1_000_000:.1f} Tr"
+        return f"₫{val/1_000_000:.1f}M"
     if abs(val) >= 1_000:
         return f"₫{val/1_000:.0f}K"
     return f"₫{val:,.0f}"
@@ -22,6 +22,7 @@ from data.repository import (
     fetch_properties,
     fetch_revenue_actual_summary,
     fetch_adr_revpar_actual_summary,
+    fetch_data_as_of,
 )
 from ui.components import kpi_card
 from ui.tabs.revenue import draw as draw_revenue
@@ -37,20 +38,31 @@ st.markdown(f"<style>{theme_css.read_text()}</style>", unsafe_allow_html=True)
 logo_path = Path(__file__).parent / "logo.png"
 logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
 
-# Row 1: Branding + refresh
-hdr_left, hdr_right = st.columns([11, 1])
-with hdr_left:
-    st.markdown(f"""
-<div style="display:flex;align-items:center;gap:12px;padding:12px 0 8px 0">
-  <img src="data:image/png;base64,{logo_b64}" style="height:44px;width:auto">
-  <span style="font-size:22px;font-weight:700;color:#1E40AF;letter-spacing:-0.3px">PMS Dashboard</span>
+# Handle refresh via query param (triggered by HTML button below)
+if "_refresh" in st.query_params:
+    st.cache_data.clear()
+    st.query_params.clear()
+    st.rerun()
+
+try:
+    as_of = fetch_data_as_of()
+    as_of_str = as_of.strftime("%d %b %Y") if as_of else "N/A"
+except Exception:
+    as_of_str = "N/A"
+
+# Row 1: Branding + refresh — pure HTML for full layout control
+st.markdown(f"""
+<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0 8px 0">
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="data:image/png;base64,{logo_b64}" style="height:44px;width:auto">
+    <span style="font-size:22px;font-weight:700;color:#1E40AF;letter-spacing:-0.3px">PMS Dashboard</span>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+    <a href="?_refresh=1" style="display:inline-block;padding:4px 12px;border:1px solid #DEE2E6;border-radius:6px;background:#fff;color:#374151;font-size:16px;text-decoration:none;line-height:1.5" title="Tải lại dữ liệu mới nhất">↻</a>
+    <span style="font-size:11px;color:#9CA3AF;font-style:italic">Data as of {as_of_str}</span>
+  </div>
 </div>
 """, unsafe_allow_html=True)
-with hdr_right:
-    st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
-    if st.button("↻", help="Reload latest data from database (clears cache)", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
 
 st.divider()
 
