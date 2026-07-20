@@ -47,28 +47,12 @@ st.markdown(f"""
 
 st.divider()
 
-# Row 2: Filters — left-aligned
+# Row 2: Filters
 today = date.today()
 
-p0, p1, p2, p3, _ = st.columns([0.7, 0.7, 0.7, 0.7, 6])
-with p0:
-    if st.button("30D", use_container_width=True):
-        st.session_state["from_input"] = today - timedelta(days=30)
-        st.session_state["to_input"] = today
-with p1:
-    if st.button("90D", use_container_width=True):
-        st.session_state["from_input"] = today - timedelta(days=90)
-        st.session_state["to_input"] = today
-with p2:
-    if st.button("MTD", use_container_width=True):
-        st.session_state["from_input"] = today.replace(day=1)
-        st.session_state["to_input"] = today
-with p3:
-    if st.button("YTD", use_container_width=True):
-        st.session_state["from_input"] = today.replace(month=1, day=1)
-        st.session_state["to_input"] = today
-
-c_prop, c_from, c_to, c_refresh, _ = st.columns([3, 1.5, 1.5, 0.6, 2])
+def _set_preset(start):
+    st.session_state["from_input"] = start
+    st.session_state["to_input"] = date.today()
 
 try:
     props_df = fetch_properties()
@@ -80,6 +64,9 @@ except Exception as e:
     prop_map = {"All Properties": None}
     st.warning(f"Could not load properties: {e}")
 
+c_prop, c_from, c_to, c_refresh, c_30, c_90, c_mtd, c_ytd = st.columns(
+    [2.5, 1.5, 1.5, 0.4, 0.7, 0.7, 0.75, 0.75]
+)
 with c_prop:
     property_label = st.selectbox("Property", list(prop_map.keys()))
 with c_from:
@@ -90,6 +77,18 @@ with c_refresh:
     st.markdown('<div style="height:28px"></div>', unsafe_allow_html=True)
     if st.button("↻", help="Refresh data"):
         st.cache_data.clear()
+with c_30:
+    st.markdown('<div style="height:28px"></div>', unsafe_allow_html=True)
+    st.button("30D", on_click=_set_preset, args=(today - timedelta(days=30),), use_container_width=True)
+with c_90:
+    st.markdown('<div style="height:28px"></div>', unsafe_allow_html=True)
+    st.button("90D", on_click=_set_preset, args=(today - timedelta(days=90),), use_container_width=True)
+with c_mtd:
+    st.markdown('<div style="height:28px"></div>', unsafe_allow_html=True)
+    st.button("MTD", on_click=_set_preset, args=(today.replace(day=1),), use_container_width=True)
+with c_ytd:
+    st.markdown('<div style="height:28px"></div>', unsafe_allow_html=True)
+    st.button("YTD", on_click=_set_preset, args=(today.replace(month=1, day=1),), use_container_width=True)
 
 hotel_id = prop_map[property_label]
 
