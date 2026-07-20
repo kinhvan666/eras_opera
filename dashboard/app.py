@@ -37,13 +37,20 @@ st.markdown(f"<style>{theme_css.read_text()}</style>", unsafe_allow_html=True)
 logo_path = Path(__file__).parent / "logo.png"
 logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
 
-# Row 1: Branding
-st.markdown(f"""
+# Row 1: Branding + refresh
+hdr_left, hdr_right = st.columns([11, 1])
+with hdr_left:
+    st.markdown(f"""
 <div style="display:flex;align-items:center;gap:12px;padding:12px 0 8px 0">
   <img src="data:image/png;base64,{logo_b64}" style="height:44px;width:auto">
   <span style="font-size:22px;font-weight:700;color:#1E40AF;letter-spacing:-0.3px">PMS Dashboard</span>
 </div>
 """, unsafe_allow_html=True)
+with hdr_right:
+    st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
+    if st.button("↻", help="Reload latest data from database (clears cache)", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
 
 st.divider()
 
@@ -64,8 +71,8 @@ except Exception as e:
     prop_map = {"All Properties": None}
     st.warning(f"Could not load properties: {e}")
 
-c_prop, c_from, c_to, c_refresh, c_30, c_90, c_mtd, c_ytd = st.columns(
-    [2.5, 1.5, 1.5, 0.4, 0.7, 0.7, 0.75, 0.75]
+c_prop, c_from, c_to, c_30, c_90, c_mtd, c_ytd = st.columns(
+    [2.5, 1.5, 1.5, 0.7, 0.7, 0.75, 0.75]
 )
 with c_prop:
     property_label = st.selectbox("Property", list(prop_map.keys()))
@@ -73,10 +80,6 @@ with c_from:
     start_date = st.date_input("From", value=today - timedelta(days=DEFAULT_DATE_RANGE_DAYS), key="from_input")
 with c_to:
     end_date = st.date_input("To", value=today, key="to_input")
-with c_refresh:
-    st.markdown('<div style="height:28px"></div>', unsafe_allow_html=True)
-    if st.button("↻", help="Refresh data"):
-        st.cache_data.clear()
 with c_30:
     st.markdown('<div style="height:28px"></div>', unsafe_allow_html=True)
     st.button("30D", on_click=_set_preset, args=(today - timedelta(days=30),), use_container_width=True)
