@@ -11,6 +11,13 @@ GREEN  = "#157347"
 RED    = "#DC3545"
 GRAY   = "#ADB5BD"
 
+VND_LABEL_EXPR = (
+    "datum.value >= 1e9 ? format(datum.value / 1e9, '.1f') + ' Tỷ' : "
+    "datum.value >= 1e6 ? format(datum.value / 1e6, '.0f') + ' Tr' : "
+    "datum.value >= 1e3 ? format(datum.value / 1e3, '.0f') + 'K' : "
+    "format(datum.value, ',.0f')"
+)
+
 
 def _monthly(df):
     """Aggregate daily df to monthly for all KPIs."""
@@ -58,12 +65,12 @@ def draw(start_date, end_date, hotel_id=None):
             bars = alt.Chart(src).mark_bar(color=BLUE, opacity=0.8,
                                             cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
                 x=x_field,
-                y=alt.Y("total_revenue:Q", title="Revenue (₫)", axis=alt.Axis(format=",.0f")),
+                y=alt.Y("total_revenue:Q", title="Revenue (₫)", axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
                 tooltip=[x_tooltip, alt.Tooltip("total_revenue:Q", format=",.0f", title="Revenue ₫")],
             ).properties(height=280)
             if by_month:
                 labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=10).encode(
-                    text=alt.Text("total_revenue:Q", format=",.0f")
+                    text=alt.Text("total_revenue:Q", format="~s")
                 )
                 bars = bars + labels
             st.altair_chart(bars, use_container_width=True)
@@ -108,14 +115,14 @@ def draw(start_date, end_date, hotel_id=None):
             if by_month:
                 base = alt.Chart(src).encode(
                     x=x_field,
-                    y=alt.Y("adr:Q", title="ADR (₫)", axis=alt.Axis(format=",.0f")),
+                    y=alt.Y("adr:Q", title="ADR (₫)", axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
                     tooltip=[x_tooltip, alt.Tooltip("adr:Q", format=",.0f", title="ADR ₫")],
                 )
                 st.altair_chart(
                     (base.mark_line(color=GREEN, strokeWidth=2)
                      + base.mark_point(color=GREEN, size=60, filled=True)
                      + base.mark_text(dy=-12, fontSize=10).encode(
-                         text=alt.Text("adr:Q", format=",.0f")
+                         text=alt.Text("adr:Q", format="~s")
                      )).properties(height=280),
                     use_container_width=True,
                 )
@@ -124,7 +131,7 @@ def draw(start_date, end_date, hotel_id=None):
                     alt.Chart(src).mark_bar(color=GREEN, opacity=0.8,
                                              cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
                         x=x_field,
-                        y=alt.Y("adr:Q", title="ADR (₫)", axis=alt.Axis(format=",.0f")),
+                        y=alt.Y("adr:Q", title="ADR (₫)", axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
                         tooltip=[x_tooltip, alt.Tooltip("adr:Q", format=",.0f", title="ADR ₫")],
                     ).properties(height=280),
                     use_container_width=True,
