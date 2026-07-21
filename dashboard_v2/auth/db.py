@@ -2,6 +2,7 @@
 # Database operations for auth.users table.
 # All queries use parameterized inputs — no string interpolation.
 
+import secrets
 import psycopg2
 import psycopg2.extras
 from typing import Optional
@@ -33,11 +34,18 @@ CREATE TABLE IF NOT EXISTS auth.users (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_users_username ON auth.users(username);
+
+CREATE TABLE IF NOT EXISTS auth.user_sessions (
+    token       TEXT PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at  TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days')
+);
 """
 
 
 def setup_auth_tables() -> None:
-    """Create auth schema and users table if they don't exist yet."""
+    """Create auth schema, users table, and user_sessions table if they don't exist yet."""
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
             cur.execute(SETUP_SQL)
@@ -206,3 +214,43 @@ def username_exists(username: str) -> bool:
         with conn.cursor() as cur:
             cur.execute(sql, (username,))
             return cur.fetchone() is not None
+
+
+# ---------------------------------------------------------------------------
+# Session token management (for persistent login across F5 refresh)
+# ---------------------------------------------------------------------------
+
+def create_user_session(user_id: int) -> str:
+    token = secrets.token_urlsafe(32)
+    sql = """
+        INSERT INTO auth.user_sessions (token, user_id)
+        VALUES (%s, %s)
+    """
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, (token, user_id))
+        conn.commit()
+    return token
+
+
+def get_user_by_session_token(token: str) -> Optional[dict]:
+    sql = """
+        SELECT u.id, u.username, u.email, u.display_name,
+               u.is_active, u.is_admin, u.allowed_hotel_ids
+        FROM auth.user_sessions s
+        JOIN auth.users u ON s.user_id = u.id
+        WHERE s.token = %s AND s.expires_at > NOW() AND u.is_active = true
+    """
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (token,))
+            row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def delete_user_session(token: str) -> None:
+    sql = "DELETE FROM auth.user_sessions WHERE token = %s"
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, (token,))
+        conn.commit()

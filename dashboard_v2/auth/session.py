@@ -9,6 +9,9 @@ from auth.db import (
     get_user_by_username,
     record_last_login,
     setup_auth_tables,
+    create_user_session,
+    get_user_by_session_token,
+    delete_user_session,
 )
 from auth.utils import verify_password
 from ui.i18n import t
@@ -26,7 +29,28 @@ def get_current_user() -> dict | None:
 
 
 def is_logged_in() -> bool:
-    return _USER_KEY in st.session_state and st.session_state[_USER_KEY] is not None
+    if _USER_KEY in st.session_state and st.session_state[_USER_KEY] is not None:
+        return True
+
+    # Check if a session_token exists in URL parameters (e.g. after F5 browser refresh)
+    token = st.query_params.get("session_token")
+    if token:
+        user = get_user_by_session_token(token)
+        if user:
+            st.session_state[_USER_KEY] = {
+                "id":                user["id"],
+                "username":          user["username"],
+                "display_name":      user["display_name"] or user["username"],
+                "email":             user["email"],
+                "is_admin":          user["is_admin"],
+                "allowed_hotel_ids": user["allowed_hotel_ids"],
+            }
+            return True
+        else:
+            # Token invalid/expired: clean URL query params
+            st.query_params.pop("session_token", None)
+
+    return False
 
 
 def is_admin() -> bool:
@@ -35,6 +59,10 @@ def is_admin() -> bool:
 
 
 def logout() -> None:
+    token = st.query_params.get("session_token")
+    if token:
+        delete_user_session(token)
+        st.query_params.pop("session_token", None)
     st.session_state.pop(_USER_KEY, None)
     st.rerun()
 
@@ -83,7 +111,7 @@ def _attempt_login(username: str, password: str) -> str | None:
     if not verify_password(password, user["password_hash"]):
         return t("auth.error_invalid")
 
-    # Success — store safe subset in session (no password_hash)
+    # Success — store safe subset in session & persistent token
     st.session_state[_USER_KEY] = {
         "id":                user["id"],
         "username":          user["username"],
@@ -92,6 +120,8 @@ def _attempt_login(username: str, password: str) -> str | None:
         "is_admin":          user["is_admin"],
         "allowed_hotel_ids": user["allowed_hotel_ids"],
     }
+    token = create_user_session(user["id"])
+    st.query_params["session_token"] = token
     record_last_login(user["id"])
     return None
 

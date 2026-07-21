@@ -41,7 +41,7 @@ if "lang" in st.query_params:
     del st.query_params["lang"]
     st.rerun()
 
-st.set_page_config(page_title=t("app.title"), layout="wide")
+st.set_page_config(page_title="ERAS Group Dashboard", layout="wide")
 
 # ── Auth guard — stops here and shows login page if not authenticated ──────
 user = require_login()
@@ -59,10 +59,14 @@ logo_path = Path(__file__).parent / "logo.png"
 logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
 
 # Handle refresh via query param
-if "_refresh" in st.query_params:
+if "refresh" in st.query_params or "_refresh" in st.query_params:
     st.cache_data.clear()
     st.query_params.clear()
     st.rerun()
+
+if st.query_params.get("logout") == "1":
+    st.query_params.clear()
+    logout()
 
 try:
     as_of = fetch_data_as_of()
@@ -70,43 +74,121 @@ try:
 except Exception:
     as_of_str = "N/A"
 
-# Logout handler
-if "_logout" in st.query_params:
-    st.query_params.clear()
-    logout()
+# ── Top Brand Header ──
+lang = st.session_state.get("lang", "vi")
+admin_link = f'<a href="?page=admin" target="_self" style="color:var(--text-secondary);font-size:12px;text-decoration:none;" title="{t("auth.admin_panel")}">{t("auth.admin_panel")}</a>' if is_admin() else ""
 
-_admin_html = ""
-if is_admin():
-    _admin_html = f'<a href="?page=admin" target="_self" style="color:var(--text-secondary);font-size:12px;text-decoration:none;margin-right:12px" title="{t("auth.admin_panel")}">⚙ {t("auth.admin_panel")}</a>'
+col_logo, col_user = st.columns([0.55, 0.45])
+with col_logo:
+    st.markdown(f'''
+    <div style="display:flex;align-items:center;gap:12px;padding:4px 0;">
+      <img src="data:image/png;base64,{logo_b64}" style="height:42px;width:auto;">
+      <span style="font-size:22px;font-weight:700;background:linear-gradient(90deg,#FFFFFF 0%,#93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px;">{t("app.title")}</span>
+    </div>
+    ''', unsafe_allow_html=True)
 
-st.markdown(f"""<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 10px 0">
-<div style="display:flex;align-items:center;gap:12px">
-<img src="data:image/png;base64,{logo_b64}" style="height:44px;width:auto">
-<span style="font-size:22px;font-weight:700;background:linear-gradient(90deg,#FFFFFF 0%,#93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px">{t('app.title')}</span>
-</div>
-<div style="display:flex;align-items:center;gap:8px">
-<span style="color:var(--text-secondary);font-size:13px">👤 {user['display_name']}</span>
-{_admin_html}
-</div>
-</div>""", unsafe_allow_html=True)
+with col_user:
+    st.markdown('<div class="hdr-nav-box"></div>', unsafe_allow_html=True)
+    st.markdown(f'''
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-bottom:6px;">
+      <span style="color:var(--text-secondary);font-size:13px;font-weight:500;font-style:italic;">{t("header.welcome", name=user["display_name"])}</span>
+      {admin_link}
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    st.markdown("""<style>
+    div.hdr-nav-box { display: none; }
+    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        gap: 0px !important;
+        width: 100% !important;
+        margin-top: 2px !important;
+    }
+    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] [data-testid="stElementContainer"],
+    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] div.stButton {
+        width: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] button {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 12px !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+        line-height: 28px !important;
+        border-radius: 0px !important;
+        margin: 0 -1px 0 0 !important;
+        width: auto !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+        box-shadow: none !important;
+    }
+    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] button[kind="secondary"] {
+        border: 1px solid var(--border) !important;
+        background: var(--bg-card) !important;
+        color: var(--text-secondary) !important;
+    }
+    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] button[kind="primary"] {
+        border: 1px solid #3B82F6 !important;
+        background: #3B82F6 !important;
+        color: #ffffff !important;
+        z-index: 2 !important;
+    }
+    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] > [data-testid="column"]:first-child button {
+        border-top-left-radius: 6px !important;
+        border-bottom-left-radius: 6px !important;
+    }
+    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] > [data-testid="column"]:last-child button {
+        border-top-right-radius: 6px !important;
+        border-bottom-right-radius: 6px !important;
+    }
+    </style>""", unsafe_allow_html=True)
 
-# EN / VI / ↻ / Đăng xuất row — st.button (no page nav → session preserved)
-_, c_en, c_vi, c_rf, c_lo = st.columns([3, 1, 1, 1, 2], gap="small")
-with c_en:
-    if st.button(t("lang.en"), key="btn_en", type="secondary", use_container_width=True):
-        st.session_state["lang"] = "en"; st.rerun()
-with c_vi:
-    if st.button(t("lang.vi"), key="btn_vi", type="secondary", use_container_width=True):
-        st.session_state["lang"] = "vi"; st.rerun()
-with c_rf:
-    if st.button("↻", key="btn_rf", type="secondary", use_container_width=True, help=t("header.refresh_title")):
-        st.cache_data.clear(); st.rerun()
-with c_lo:
-    if st.button(t("auth.logout"), key="btn_lo", type="secondary", use_container_width=True):
-        logout()
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        if st.button(t("lang.en"), key="hdr_en", type="primary" if lang == "en" else "secondary"):
+            st.session_state["lang"] = "en"
+            st.rerun()
+    with c2:
+        if st.button(t("lang.vi"), key="hdr_vi", type="primary" if lang == "vi" else "secondary"):
+            st.session_state["lang"] = "vi"
+            st.rerun()
+    with c3:
+        if st.button("↻", key="hdr_rf", type="secondary", help=t("header.refresh_title")):
+            st.cache_data.clear()
+            st.rerun()
+    with c4:
+        if st.button("⎋", key="hdr_lo", type="secondary", help=t("auth.logout")):
+            logout()
 
-# Data as of + divider
-st.markdown(f"""<div style="display:flex;justify-content:flex-end;align-items:flex-end;padding:0 0 8px 0;border-bottom:1px solid var(--border);margin-bottom:16px"><span style="font-size:11px;color:var(--text-secondary);font-style:italic;white-space:nowrap">{t("header.data_as_of", date=as_of_str)}</span></div>""", unsafe_allow_html=True)
+    st.markdown(f'''
+    <div style="text-align:right;margin-top:4px;">
+      <span style="font-size:11px;color:var(--text-secondary);font-style:italic;white-space:nowrap;">{t("header.data_as_of", date=as_of_str)}</span>
+    </div>
+    ''', unsafe_allow_html=True)
+
+st.markdown('<div style="border-bottom:1px solid var(--border);margin:8px 0 16px 0;"></div>', unsafe_allow_html=True)
 
 # Row 2: Filters
 today = date.today()
@@ -204,7 +286,7 @@ else:
     with row2[1]:
         kpi_card(t("kpi.reservations"), f"{current['reservations']:,.0f}", current["reservations"], g(prior, "reservations"))
     with row2[2]:
-        kpi_card(t("kpi.lead_time"), f"{current['avg_lead_time']:.1f}{t('kpi.lead_time_unit')}", current["avg_lead_time"], g(prior, "avg_lead_time"), higher_is_better=False)
+        kpi_card(t("kpi.lead_time"), f"{current['avg_lead_time']:.1f} {t('kpi.lead_time_unit')}", current["avg_lead_time"], g(prior, "avg_lead_time"), higher_is_better=False)
     with row2[3]:
         kpi_card(t("kpi.cancel_rate"), f"{current['cancellation_rate'] * 100:.1f}%", current["cancellation_rate"], g(prior, "cancellation_rate"), higher_is_better=False)
 

@@ -32,31 +32,71 @@ def _fmt_label(v):
     return f"₫{v:,.0f}"
 
 
-def _hbar(data, x_col, y_col, color, x_title, y_title):
-    """Horizontal bar chart sorted descending by value."""
-    data = data.copy().sort_values(x_col, ascending=True)
+def _gradient_hbar(data, x_col, y_col, x_title, y_title, top_n=8):
+    """Horizontal bar chart with gradient color ranking and concise code labels."""
+    data = data.copy().sort_values(x_col, ascending=False)
+    if len(data) > top_n:
+        top_df = data.iloc[:top_n].copy()
+        other_val = data.iloc[top_n:][x_col].sum()
+        if other_val > 0:
+            other_row = pd.DataFrame([{y_col: "OTH", x_col: other_val}])
+            data = pd.concat([top_df, other_row], ignore_index=True)
+        else:
+            data = top_df
+
+    data = data.sort_values(x_col, ascending=True)
     data["_label"] = data[x_col].apply(_fmt_label)
-    
-    # Map code to friendly description/name
-    data["_desc"] = data[y_col].apply(lambda x: t_code(y_col, x))
-    
+    data["_desc"] = data[y_col].apply(lambda x: t_code(y_col, x) if x != "OTH" else "Khác / Other")
+
     bars = alt.Chart(data).mark_bar(
-        color=color, opacity=0.85,
         cornerRadiusTopRight=6, cornerRadiusBottomRight=6
     ).encode(
         y=alt.Y(f"{y_col}:N", sort="-x", title=y_title),
-        x=alt.X(f"{x_col}:Q", title=x_title,
-                axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+        x=alt.X(f"{x_col}:Q", title=x_title, axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+        color=alt.Color(f"{x_col}:Q", scale=alt.Scale(scheme="tealblues"), legend=None),
+        tooltip=[
+            alt.Tooltip(f"{y_col}:N", title="Mã / Code"),
+            alt.Tooltip("_desc:N", title=y_title),
+            alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
+        ],
+    )
+    labels = bars.mark_text(align="left", dx=6, fontSize=11, fontWeight=600, color="#F8FAFC").encode(
+        text=alt.Text("_label:N")
+    )
+    return (bars + labels).properties(height=280)
+
+
+def _gradient_vbar(data, x_col, y_col, x_title, y_title, top_n=7):
+    """Vertical column chart with gradient color ranking to break visual monotony."""
+    data = data.copy().sort_values(x_col, ascending=False)
+    if len(data) > top_n:
+        top_df = data.iloc[:top_n].copy()
+        other_val = data.iloc[top_n:][x_col].sum()
+        if other_val > 0:
+            other_row = pd.DataFrame([{y_col: "OTH", x_col: other_val}])
+            data = pd.concat([top_df, other_row], ignore_index=True)
+        else:
+            data = top_df
+
+    data["_label"] = data[x_col].apply(_fmt_label)
+    data["_desc"] = data[y_col].apply(lambda x: t_code(y_col, x) if x != "OTH" else "Khác / Other")
+
+    bars = alt.Chart(data).mark_bar(
+        cornerRadiusTopLeft=6, cornerRadiusTopRight=6
+    ).encode(
+        x=alt.X(f"{y_col}:N", sort="-y", title=y_title, axis=alt.Axis(labelAngle=-25)),
+        y=alt.Y(f"{x_col}:Q", title=x_title, axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+        color=alt.Color(f"{x_col}:Q", scale=alt.Scale(scheme="blues"), legend=None),
         tooltip=[
             alt.Tooltip(f"{y_col}:N", title="Mã/Code"),
             alt.Tooltip("_desc:N", title=y_title),
             alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
         ],
     )
-    labels = bars.mark_text(align="left", dx=4, fontSize=12, color="#E2E8F0").encode(
+    labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=11, fontWeight=600, color="#F8FAFC").encode(
         text=alt.Text("_label:N")
     )
-    return (bars + labels).properties(height=max(180, len(data) * 36))
+    return (bars + labels).properties(height=280)
 
 
 def _donut_chart(data, x_col, y_col, x_title):
@@ -209,19 +249,19 @@ def draw(start_date, end_date, hotel_id=None):
         with col1:
             seg = (bdf.groupby("market_code", as_index=False)["revenue"]
                       .sum().sort_values("revenue", ascending=False))
-            with chart_wrapper(t("chart.revenue_by_segment"), height=380):
+            with chart_wrapper(t("chart.revenue_by_segment"), height=360):
                 st.altair_chart(
-                    _hbar(seg, "revenue", "market_code", SUB_BAR_COLOR,
-                          t("axis.revenue"), t("axis.segment")),
+                    _gradient_hbar(seg, "revenue", "market_code",
+                                  t("axis.revenue"), t("axis.segment")),
                     use_container_width=True,
                 )
         with col2:
             room = (bdf.groupby("room_type", as_index=False)["revenue"]
                        .sum().sort_values("revenue", ascending=False))
-            with chart_wrapper(t("chart.revenue_by_roomtype"), height=380):
+            with chart_wrapper(t("chart.revenue_by_roomtype"), height=360):
                 st.altair_chart(
-                    _hbar(room, "revenue", "room_type", SUB_BAR_COLOR,
-                          t("axis.revenue"), t("axis.room_type")),
+                    _gradient_vbar(room, "revenue", "room_type",
+                                  t("axis.revenue"), t("axis.room_type")),
                     use_container_width=True,
                 )
     else:

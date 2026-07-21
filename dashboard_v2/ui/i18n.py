@@ -2,9 +2,10 @@ import streamlit as st
 
 T = {
     "en": {
-        "app.title": "COSTAMIGO PMS Dashboard",
+        "app.title": "Dashboard",
         "header.refresh_title": "Reload latest data",
         "header.data_as_of": "Data as of {date}",
+        "header.welcome": "Welcome, {name}",
         "lang.en": "EN", "lang.vi": "VI",
         "filter.property": "Property", "filter.all_properties": "All Properties",
         "filter.from": "From", "filter.to": "To",
@@ -104,9 +105,10 @@ T = {
         "admin.back_to_dashboard": "← Back to Dashboard",
     },
     "vi": {
-        "app.title": "COSTAMIGO PMS Dashboard",
+        "app.title": "Dashboard",
         "header.refresh_title": "Tải lại dữ liệu mới nhất",
         "header.data_as_of": "Dữ liệu tính đến {date}",
+        "header.welcome": "Xin chào, {name}",
         "lang.en": "EN", "lang.vi": "VI",
         "filter.property": "Cơ sở", "filter.all_properties": "Tất cả cơ sở",
         "filter.from": "Từ ngày", "filter.to": "Đến ngày",
