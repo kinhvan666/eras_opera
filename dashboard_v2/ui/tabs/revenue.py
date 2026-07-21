@@ -6,12 +6,12 @@ from data.repository import fetch_revenue_actual, fetch_revenue_breakdown
 from ui.components import chart_wrapper
 from ui.i18n import t, t_code
 
-# Stacked chart — Option 2 Analogous/Categorical
-ROOM_COLOR    = "#2563EB"  # Deep Blue
-FNB_COLOR     = "#0D9488"  # Teal
-SC_COLOR      = "#F59E0B"  # Amber
-OTHER_COLOR   = "#6B7280"  # Cool Gray
-SUB_BAR_COLOR = "#2563EB"  # single color for all sub-charts
+# Stacked chart — Luminous Neon Palette for Dark Mode
+ROOM_COLOR    = "#3B82F6"  # Electric Blue
+FNB_COLOR     = "#10B981"  # Emerald Green
+SC_COLOR      = "#F59E0B"  # Luminous Amber
+OTHER_COLOR   = "#8B5CF6"  # Electric Purple
+SUB_BAR_COLOR = "#1D4ED8"  # Sleek Blue for horizontal bar charts
 
 # Vega-Lite expression: abbreviate VND values on axes
 VND_LABEL_EXPR = (
@@ -42,7 +42,7 @@ def _hbar(data, x_col, y_col, color, x_title, y_title):
     
     bars = alt.Chart(data).mark_bar(
         color=color, opacity=0.85,
-        cornerRadiusTopRight=2, cornerRadiusBottomRight=2
+        cornerRadiusTopRight=6, cornerRadiusBottomRight=6
     ).encode(
         y=alt.Y(f"{y_col}:N", sort="-x", title=y_title),
         x=alt.X(f"{x_col}:Q", title=x_title,
@@ -59,6 +59,45 @@ def _hbar(data, x_col, y_col, color, x_title, y_title):
     return (bars + labels).properties(height=max(180, len(data) * 36))
 
 
+def _donut_chart(data, x_col, y_col, x_title):
+    """Donut chart for total revenue share."""
+    total = data[x_col].sum()
+    data = data.copy()
+    data["_pct"] = data[x_col] / total if total > 0 else 0
+    data["_pct_label"] = data["_pct"].apply(lambda p: f"{p*100:.1f}%")
+    data["_val_label"] = data[x_col].apply(_fmt_label)
+    
+    # Map categories to friendly bilingual names
+    lang = st.session_state.get("lang", "en")
+    cat_translation = {
+        "Room": "Room" if lang == "en" else "Doanh thu phòng",
+        "FnB": "FnB" if lang == "en" else "FnB (Ẩm thực)",
+        "ServiceCharge": "Service Charge" if lang == "en" else "Phí dịch vụ",
+        "Other": "Other" if lang == "en" else "Khác"
+    }
+    data["_desc"] = data[y_col].apply(lambda x: cat_translation.get(x, x))
+
+    base = alt.Chart(data).encode(
+        theta=alt.Theta(f"{x_col}:Q", stack=True),
+        color=alt.Color(
+            f"{y_col}:N",
+            scale=alt.Scale(domain=CATEGORY_ORDER, range=CATEGORY_COLORS),
+            legend=alt.Legend(title=t("axis.category") if lang == "vi" else "Category", orient="bottom")
+        ),
+        tooltip=[
+            alt.Tooltip("_desc:N", title=t("axis.category")),
+            alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
+            alt.Tooltip("_pct:Q", format=".1%", title="Tỷ lệ / Ratio")
+        ]
+    )
+    
+    donut = base.mark_arc(innerRadius=42, outerRadius=70, stroke="#0E1223", strokeWidth=2)
+    text = base.mark_text(radius=88, size=11, color="#E2E8F0").encode(
+        text=alt.Text("_pct_label:N")
+    )
+    return (donut + text).properties(height=280)
+
+
 def draw(start_date, end_date, hotel_id=None):
     df_actual = fetch_revenue_actual(start_date, end_date, hotel_id)
     bdf = fetch_revenue_breakdown(start_date, end_date, hotel_id)
@@ -70,7 +109,7 @@ def draw(start_date, end_date, hotel_id=None):
         horizontal=True, label_visibility="collapsed", key="rev_tab_view"
     ) == t("rev.by_month")
 
-    # ── Row 1: Revenue trend (full width) ────────────────────────────────────
+    # ── Row 1: Revenue trend & Overall composition ───────────────────────────
     if df_actual is not None and not df_actual.empty:
         df_chart = df_actual[df_actual["revenue_category"] != "Tax"].copy()
         if by_month:
@@ -89,14 +128,16 @@ def draw(start_date, end_date, hotel_id=None):
             x_tooltip = alt.Tooltip("revenue_date:T", title=t("axis.date"),
                                      format="%d/%m/%Y")
         title = t("chart.revenue_by_month") if by_month else t("chart.revenue_by_day")
-        with chart_wrapper(title, height=380):
-            x_col = "month" if by_month else "revenue_date"
-            totals = src.groupby(x_col, as_index=False)["posted_amount"].sum()
-            totals["_label"] = totals["posted_amount"].apply(_fmt_label)
-            x_enc_tot = alt.X(f"{x_col}:N", title=t("axis.month") if by_month else t("axis.date"),
-                                sort=sorted(src[x_col].unique()) if by_month else None)
-            y_max = totals["posted_amount"].max() * 1.15
+        
+        # Build the left trend chart
+        x_col = "month" if by_month else "revenue_date"
+        totals = src.groupby(x_col, as_index=False)["posted_amount"].sum()
+        totals["_label"] = totals["posted_amount"].apply(_fmt_label)
+        x_enc_tot = alt.X(f"{x_col}:N", title=t("axis.month") if by_month else t("axis.date"),
+                            sort=sorted(src[x_col].unique()) if by_month else None)
+        y_max = totals["posted_amount"].max() * 1.15
 
+        if by_month:
             bars = alt.Chart(src).mark_bar(
                 cornerRadiusTopLeft=2, cornerRadiusTopRight=2
             ).encode(
@@ -107,6 +148,7 @@ def draw(start_date, end_date, hotel_id=None):
                 color=alt.Color(
                     "revenue_category:N", title=t("axis.category"),
                     scale=alt.Scale(domain=CATEGORY_ORDER, range=CATEGORY_COLORS),
+                    legend=None
                 ),
                 order=alt.Order("revenue_category:N", sort="ascending"),
                 tooltip=[
@@ -117,22 +159,52 @@ def draw(start_date, end_date, hotel_id=None):
                 ],
             ).properties(height=300)
 
-            if by_month:
-                labels = alt.Chart(totals).mark_text(
-                    align="center", baseline="bottom", dy=-4, fontSize=13, color="#E2E8F0"
-                ).encode(
-                    x=x_enc_tot,
-                    y=alt.Y("posted_amount:Q"),
-                    text=alt.Text("_label:N"),
-                )
-                st.altair_chart(bars + labels, use_container_width=True)
-            else:
-                st.altair_chart(bars, use_container_width=True)
+            labels = alt.Chart(totals).mark_text(
+                align="center", baseline="bottom", dy=-4, fontSize=13, color="#E2E8F0"
+            ).encode(
+                x=x_enc_tot,
+                y=alt.Y("posted_amount:Q"),
+                text=alt.Text("_label:N"),
+            )
+            chart = bars + labels
+        else:
+            # Daily view uses smooth stacked Area chart instead of cluttered thin bars
+            chart = alt.Chart(src).mark_area(
+                opacity=0.7,
+                interpolate="monotone"
+            ).encode(
+                x=x_enc,
+                y=alt.Y("sum(posted_amount):Q", title=t("axis.revenue"),
+                        axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+                color=alt.Color(
+                    "revenue_category:N", title=t("axis.category"),
+                    scale=alt.Scale(domain=CATEGORY_ORDER, range=CATEGORY_COLORS),
+                    legend=None
+                ),
+                order=alt.Order("revenue_category:N", sort="ascending"),
+                tooltip=[
+                    x_tooltip,
+                    alt.Tooltip("revenue_category:N", title=t("axis.category")),
+                    alt.Tooltip("sum(posted_amount):Q", format=",.0f",
+                                title=t("axis.revenue")),
+                ],
+            ).properties(height=300)
+
+        # Columns layout: 70% Trend Chart, 30% Overall Donut Chart
+        col_left, col_right = st.columns([7, 3])
+        with col_left:
+            with chart_wrapper(title, height=380):
+                st.altair_chart(chart, use_container_width=True)
+        with col_right:
+            with chart_wrapper(t("chart.revenue_by_segment_section"), height=380):
+                donut_df = src.groupby("revenue_category", as_index=False)["posted_amount"].sum()
+                st.altair_chart(_donut_chart(donut_df, "posted_amount", "revenue_category", t("axis.revenue")), use_container_width=True)
     else:
         st.info(t("msg.no_posting"))
 
     # ── Row 2: Market Segment + Room Type ────────────────────────────────────
     if not bdf.empty:
+        st.divider()
         col1, col2 = st.columns(2)
         with col1:
             seg = (bdf.groupby("market_code", as_index=False)["revenue"]

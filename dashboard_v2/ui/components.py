@@ -1,5 +1,7 @@
 import streamlit as st
 
+from ui.i18n import t
+
 
 def _delta_html(current, prior, fmt, higher_is_better=True):
     if prior is None or current is None or prior == 0:
@@ -12,9 +14,7 @@ def _delta_html(current, prior, fmt, higher_is_better=True):
     text_color = "#34D399" if positive else "#F87171"
     arrow = "↑" if pct >= 0 else "↓"
     
-    lang = st.session_state.get("lang", "en")
-    label = "vs kỳ trước" if lang == "vi" else "vs prior period"
-    
+    label = t("kpi.delta_label")
     return f'<div style="margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"><span style="background-color:{bg_color}; color:{text_color}; font-size:12px; font-weight:600; padding:2px 8px; border-radius:100px; display:inline-flex; align-items:center; gap:2px; white-space:nowrap;">{arrow} {abs(pct):.1f}%</span><span style="color:#94A3B8; font-size:11px; white-space:nowrap;">{label}</span></div>'
 
 

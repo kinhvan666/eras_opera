@@ -6,6 +6,7 @@ import streamlit as st
 
 from config.settings import DEFAULT_DATE_RANGE_DAYS
 from ui.i18n import t
+from auth.session import require_login, logout, is_admin
 
 
 def fmt_vnd(val):
@@ -42,6 +43,15 @@ if "lang" in st.query_params:
 
 st.set_page_config(page_title=t("app.title"), layout="wide")
 
+# ── Auth guard — stops here and shows login page if not authenticated ──────
+user = require_login()
+
+# ── Admin page routing via query param ──
+if st.query_params.get("page") == "admin" and is_admin():
+    from pages.admin import render_admin
+    render_admin()
+    st.stop()
+
 theme_css = Path(__file__).parent / "styles" / "theme.css"
 st.markdown(f"<style>{theme_css.read_text()}</style>", unsafe_allow_html=True)
 
@@ -60,38 +70,43 @@ try:
 except Exception:
     as_of_str = "N/A"
 
-# Header: pure HTML flexbox — logo+title bên trái cao hơn, EN/VI/↻/data-as-of bên phải sát cạnh ngang xám
-lang = st.session_state["lang"]
-_btn_base = "display:inline-block;padding:5px 14px;font-size:14px;font-weight:500;text-decoration:none;cursor:pointer;border:1px solid var(--border);transition:all 0.15s ease-in-out"
-_active_state = "background:var(--accent-blue);color:#fff;border-color:var(--accent-blue);z-index:2;position:relative"
-_inactive_state = "background:var(--bg-card);color:var(--text-secondary);border-color:var(--border);position:relative"
+# Logout handler
+if "_logout" in st.query_params:
+    st.query_params.clear()
+    logout()
 
-_btn_left = f"{_btn_base};border-top-left-radius:6px;border-bottom-left-radius:6px;margin-right:-1px"
-_btn_middle = f"{_btn_base};border-radius:0;margin-right:-1px"
-_btn_right = f"{_btn_base};border-top-right-radius:6px;border-bottom-right-radius:6px"
+_admin_html = ""
+if is_admin():
+    _admin_html = f'<a href="?page=admin" target="_self" style="color:var(--text-secondary);font-size:12px;text-decoration:none;margin-right:12px" title="{t("auth.admin_panel")}">⚙ {t("auth.admin_panel")}</a>'
 
-style_en = f"{_btn_left};{_active_state if lang == 'en' else _inactive_state}"
-style_vi = f"{_btn_middle};{_active_state if lang == 'vi' else _inactive_state}"
-style_refresh = f"{_btn_right};{_inactive_state}"
-
-st.markdown(f"""
-<div>
-  <!-- Row 1: Logo and Brand -->
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 10px 0">
-    <div style="display:flex;align-items:center;gap:12px">
-      <img src="data:image/png;base64,{logo_b64}" style="height:44px;width:auto">
-      <span style="font-size:22px;font-weight:700;background:linear-gradient(90deg, #FFFFFF 0%, #93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px">{t('app.title')}</span>
-    </div>
-  </div>
-  <!-- Row 2: Buttons & Data as of, aligned to the bottom divider -->
-  <div style="display:flex;justify-content:flex-end;align-items:flex-end;padding:0 0 8px 0;border-bottom:1px solid var(--border);margin-bottom:16px">
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-      <div style="display:flex;align-items:center"><a href="?lang=en" target="_self" style="{style_en}">{t('lang.en')}</a><a href="?lang=vi" target="_self" style="{style_vi}">{t('lang.vi')}</a><a href="?_refresh=1" target="_self" style="{style_refresh}" title="{t('header.refresh_title')}">↻</a></div>
-      <span style="font-size:11px;color:var(--text-secondary);font-style:italic;white-space:nowrap">{t('header.data_as_of', date=as_of_str)}</span>
-    </div>
-  </div>
+st.markdown(f"""<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 10px 0">
+<div style="display:flex;align-items:center;gap:12px">
+<img src="data:image/png;base64,{logo_b64}" style="height:44px;width:auto">
+<span style="font-size:22px;font-weight:700;background:linear-gradient(90deg,#FFFFFF 0%,#93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px">{t('app.title')}</span>
 </div>
-""", unsafe_allow_html=True)
+<div style="display:flex;align-items:center;gap:8px">
+<span style="color:var(--text-secondary);font-size:13px">👤 {user['display_name']}</span>
+{_admin_html}
+</div>
+</div>""", unsafe_allow_html=True)
+
+# EN / VI / ↻ / Đăng xuất row — st.button (no page nav → session preserved)
+_, c_en, c_vi, c_rf, c_lo = st.columns([3, 1, 1, 1, 2], gap="small")
+with c_en:
+    if st.button(t("lang.en"), key="btn_en", type="secondary", use_container_width=True):
+        st.session_state["lang"] = "en"; st.rerun()
+with c_vi:
+    if st.button(t("lang.vi"), key="btn_vi", type="secondary", use_container_width=True):
+        st.session_state["lang"] = "vi"; st.rerun()
+with c_rf:
+    if st.button("↻", key="btn_rf", type="secondary", use_container_width=True, help=t("header.refresh_title")):
+        st.cache_data.clear(); st.rerun()
+with c_lo:
+    if st.button(t("auth.logout"), key="btn_lo", type="secondary", use_container_width=True):
+        logout()
+
+# Data as of + divider
+st.markdown(f"""<div style="display:flex;justify-content:flex-end;align-items:flex-end;padding:0 0 8px 0;border-bottom:1px solid var(--border);margin-bottom:16px"><span style="font-size:11px;color:var(--text-secondary);font-style:italic;white-space:nowrap">{t("header.data_as_of", date=as_of_str)}</span></div>""", unsafe_allow_html=True)
 
 # Row 2: Filters
 today = date.today()
@@ -108,7 +123,15 @@ def _set_preset(start):
 
 try:
     props_df = fetch_properties()
-    prop_map = {t("filter.all_properties"): None}
+    # Filter properties theo user permissions
+    allowed = user.get("allowed_hotel_ids")  # None = all, list = specific
+    if allowed is not None:
+        props_df = props_df[props_df["hotel_id"].isin(allowed)]
+
+    prop_map = {}
+    # Chỉ show "All Properties" nếu user có quyền nhiều hơn 1 property
+    if len(props_df) > 1:
+        prop_map[t("filter.all_properties")] = None
     for _, row in props_df.iterrows():
         label = row["hotel_name"] or row["hotel_id"]
         prop_map[label] = row["hotel_id"]
@@ -181,7 +204,7 @@ else:
     with row2[1]:
         kpi_card(t("kpi.reservations"), f"{current['reservations']:,.0f}", current["reservations"], g(prior, "reservations"))
     with row2[2]:
-        kpi_card(t("kpi.lead_time"), f"{current['avg_lead_time']:.1f} ngày", current["avg_lead_time"], g(prior, "avg_lead_time"), higher_is_better=False)
+        kpi_card(t("kpi.lead_time"), f"{current['avg_lead_time']:.1f}{t('kpi.lead_time_unit')}", current["avg_lead_time"], g(prior, "avg_lead_time"), higher_is_better=False)
     with row2[3]:
         kpi_card(t("kpi.cancel_rate"), f"{current['cancellation_rate'] * 100:.1f}%", current["cancellation_rate"], g(prior, "cancellation_rate"), higher_is_better=False)
 
