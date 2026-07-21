@@ -3,6 +3,8 @@
 
 # Environment
 .env
+.env.prod
+*.env.prod
 
 # Python
 __pycache__/

@@ -1,0 +1,35 @@
+services:
+  extractor:
+    build:
+      context: ./extractor
+    # Không mount source code — dùng image đã build, không live-reload
+    environment:
+      - ENV=production
+    env_file:
+      - ./extractor/.env.prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Linux: cho phép container kết nối tới host PostgreSQL
+    networks:
+      - eras-network
+    restart: unless-stopped
+    # Extractor chạy một lần rồi thoát — không phải long-running service.
+    # Được trigger bởi cron job bên ngoài (xem deployment guide).
+    profiles:
+      - extractor
+
+  dashboard:
+    build:
+      context: ./dashboard
+    env_file:
+      - ./dashboard/.env.prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8501:8501"  # Chỉ expose ra localhost — Nginx sẽ proxy vào
+    networks:
+      - eras-network
+    restart: unless-stopped
+
+networks:
+  eras-network:
+    driver: bridge
