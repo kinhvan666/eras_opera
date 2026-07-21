@@ -23,6 +23,16 @@ services:
     networks:
       - eras-network
 
+  dashboard_v2:
+    build:
+      context: ./dashboard_v2
+    ports:
+      - "8511:8501"
+    depends_on:
+      - postgres
+    networks:
+      - eras-network
+
   postgres:
     image: postgres:15
     env_file:

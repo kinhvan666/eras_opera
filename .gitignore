@@ -3,14 +3,75 @@
 
 # Environment
 .env
-.env.prod
-*.env.prod
+.env.*
+!.env.prod.example
+!.env.test.example
 
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 .venv/
 venv/
 ENV/
 env/
 
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+*,cover
+*.log
+*.tmp
+*.temp
+
+# dbt
+eras_dbt/target/
+eras_dbt/logs/
+eras_dbt/dbt_packages/
+eras_dbt/.user.yml
+eras_dbt/test_results.txt
+eras_dbt/query_out.txt
+eras_dbt/compile_*.txt
+eras_dbt/debug_output.txt
+eras_dbt/err.txt
+eras_dbt/run_error.txt
+eras_dbt/compile_log.json
+
+# Temporary / Probe files
+extractor/probe_*.py
+extractor/requirements.txt
+check_dashboard.py
+query_db.py
+
+# OS-specific
+.DS_Store
+Thumbs.db

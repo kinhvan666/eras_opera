@@ -211,6 +211,10 @@ async function main() {
     const namePattern = resolveNamingPattern(config.plan, staticEnv.gitBranch);
 
     if (envFile) {
+      // Truncate env file before writing to prevent accumulation across resume/compact events.
+      // appendFileSync accumulates entries each time; a killed session mid-write produces
+      // a partial line (e.g. "expor" instead of "export ...") that breaks bash sourcing.
+      try { fs.writeFileSync(envFile, ''); } catch (_) {}
       // Session & plan config
       writeEnv(envFile, 'CK_SESSION_ID', sessionId || '');
       writeEnv(envFile, 'CK_PLAN_NAMING_FORMAT', config.plan.namingFormat);
