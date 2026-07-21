@@ -15,55 +15,62 @@ from src.config import settings
 async def run(arrival_start_date: str, arrival_end_date: str):
     print("Starting data extraction process...")
 
-    db = Database()
-    print("Database initialized.")
-    db.setup()
+    db = None
+    try:
+        db = Database()
+        print("Database initialized.")
+        db.setup()
 
-    client = BaseOperaClient()
+        client = BaseOperaClient()
 
-    hotel_extractor = HotelConfigExtractor(client)
+        hotel_extractor = HotelConfigExtractor(client)
 
-    print(f"Fetching hotel config for hotel {settings.opera_hotel_id}...")
-    hotel_config_data = await hotel_extractor.fetch_hotel_config()
+        print(f"Fetching hotel config for hotel {settings.opera_hotel_id}...")
+        hotel_config_data = await hotel_extractor.fetch_hotel_config()
 
-    print("Counting physical rooms...")
-    physical_room_count = await hotel_extractor.fetch_physical_room_count()
-    print(f"Physical room count: {physical_room_count}")
+        print("Counting physical rooms...")
+        physical_room_count = await hotel_extractor.fetch_physical_room_count()
+        print(f"Physical room count: {physical_room_count}")
 
-    db.insert_hotel_config_snapshot(settings.opera_hotel_id, hotel_config_data, physical_room_count)
-    print("Hotel config snapshot inserted.")
+        db.insert_hotel_config_snapshot(settings.opera_hotel_id, hotel_config_data, physical_room_count)
+        print("Hotel config snapshot inserted.")
 
-    extractor = ReservationExtractor(client)
+        extractor = ReservationExtractor(client)
 
-    print(f"Fetching reservations with arrival {arrival_start_date}..{arrival_end_date}...")
-    historical = await extractor.fetch_reservations(arrival_start_date, arrival_end_date)
-    print(f"Fetched {len(historical)} historical reservations.")
+        print(f"Fetching reservations with arrival {arrival_start_date}..{arrival_end_date}...")
+        historical = await extractor.fetch_reservations(arrival_start_date, arrival_end_date)
+        print(f"Fetched {len(historical)} historical reservations.")
 
-    print("Fetching active/in-house reservations (InHouse, CheckedIn, DueIn, DueOut)...")
-    active = await extractor.fetch_active_reservations()
-    print(f"Fetched {len(active)} active reservations.")
+        print("Fetching active/in-house reservations (InHouse, CheckedIn, DueIn, DueOut)...")
+        active = await extractor.fetch_active_reservations()
+        print(f"Fetched {len(active)} active reservations.")
 
-    reservations_data = historical + active
-    print(f"Total before dedup: {len(reservations_data)} reservations.")
+        historical_ids = {r["confirmationId"] for r in historical if r.get("confirmationId")}
+        active_unique = [r for r in active if r.get("confirmationId") not in historical_ids]
 
-    if reservations_data:
-        print("Inserting data into PostgreSQL (ON CONFLICT upsert)...")
-        db.insert_raw_data(reservations_data)
-        print("Data insertion complete.")
+        reservations_data = historical + active_unique
+        print(f"Total unique reservations to process: {len(reservations_data)}")
 
-    # Cashiering postings: independent raw table (raw.cashiering_postings), run order does
-    # not matter relative to reservations. Backfill from BACKFILL_START_DATE to today.
-    cashiering_extractor = CashieringExtractor(client)
-    print(f"Fetching cashiering postings from {BACKFILL_START_DATE.isoformat()} to today...")
-    postings = await cashiering_extractor.fetch_postings(BACKFILL_START_DATE, date.today())
-    print(f"Fetched {len(postings)} cashiering postings.")
-    if postings:
-        print("Upserting cashiering postings (ON CONFLICT on transaction_no)...")
-        db.insert_cashiering_postings(postings)
-        print("Cashiering postings insertion complete.")
+        if reservations_data:
+            print("Inserting data into PostgreSQL (ON CONFLICT upsert)...")
+            db.insert_raw_data(reservations_data)
+            print("Data insertion complete.")
 
-    db.close()
-    print("Extraction process finished.")
+        # Cashiering postings: independent raw table (raw.cashiering_postings), run order does
+        # not matter relative to reservations. Backfill from BACKFILL_START_DATE to today.
+        cashiering_extractor = CashieringExtractor(client)
+        print(f"Fetching cashiering postings from {BACKFILL_START_DATE.isoformat()} to today...")
+        postings = await cashiering_extractor.fetch_postings(BACKFILL_START_DATE, date.today())
+        print(f"Fetched {len(postings)} cashiering postings.")
+        if postings:
+            print("Upserting cashiering postings (ON CONFLICT on transaction_no)...")
+            db.insert_cashiering_postings(postings)
+            print("Cashiering postings insertion complete.")
+
+    finally:
+        if db:
+            db.close()
+        print("Extraction process finished.")
 
 
 def main():

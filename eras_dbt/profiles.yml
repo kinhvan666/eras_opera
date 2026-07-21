@@ -5,7 +5,9 @@ eras_dbt:
       type: postgres
       host: localhost
       user: user
-      password: "password"
+      # Do not store password here.
+      # Configure your password in the git-ignored .user.yml file.
+      # password: your_password
       port: 5434
       dbname: erg_opera_data
       schema: analytics
