@@ -30,6 +30,19 @@ services:
       - eras-network
     restart: unless-stopped
 
+  dashboard-v2:
+    build:
+      context: ./dashboard_v2
+    env_file:
+      - ./dashboard_v2/.env.prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8503:8501"  # Port 8503 — Nginx proxy vào khi sẵn sàng switch
+    networks:
+      - eras-network
+    restart: unless-stopped
+
 networks:
   eras-network:
     driver: bridge
