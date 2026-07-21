@@ -122,17 +122,23 @@ async def test_pagination_stops_on_hasmore_false_primary():
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_pagination_stops_on_short_page_fallback():
-    """SAFETY FALLBACK: hasMore=True but page shorter than limit still stops the loop."""
+async def test_pagination_continues_on_short_page_until_empty():
+    """A short page with hasMore=True does NOT stop the loop; only an empty page (or
+    hasMore=False) ends it. Guards against silently dropping pages when the API returns a
+    partial page but signals more data remains."""
     respx.post(_TOKEN_URL).mock(return_value=Response(200, json=_TOKEN_RESP))
     short_page = _page([_posting(1), _posting(2), _posting(3)], has_more=True)
-    route = respx.get(_POSTINGS_URL).mock(return_value=Response(200, json=short_page))
+    empty_page = _page([], has_more=True)
+    pages = iter([short_page, empty_page])
+    route = respx.get(_POSTINGS_URL).mock(
+        side_effect=lambda req: Response(200, json=next(pages))
+    )
 
     rows = await CashieringExtractor(BaseOperaClient()).fetch_postings(
         date(2026, 1, 1), date(2026, 1, 10)
     )
 
-    assert route.call_count == 1  # fallback fired: len(page) < limit despite hasMore=True
+    assert route.call_count == 2  # short page kept going; empty page stopped the loop
     assert len(rows) == 3
 
 

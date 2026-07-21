@@ -79,8 +79,8 @@ class CashieringExtractor:
                     all_rows.append(self._to_row(posting))
 
                 has_more = response.get("hasMore", False)
-                # PRIMARY: hasMore False stops. SECONDARY: short page stops (safety fallback).
-                if not has_more or len(page_results) < _PAGE_LIMIT:
+                # PRIMARY: hasMore False stops. SECONDARY: empty page stops (safety fallback).
+                if not has_more or len(page_results) == 0:
                     break
                 offset += len(page_results)
 
