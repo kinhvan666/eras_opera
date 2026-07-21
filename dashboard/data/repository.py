@@ -68,17 +68,43 @@ def fetch_kpi_summary(start_date, end_date, hotel_id=None):
 
 
 REVENUE_BREAKDOWN_SQL = """
+    -- Join fct_folio_line (actual posted revenue) với fct_reservation_night
+    -- để lấy market_code, rate_plan_code, room_type.
+    -- Join chỉ theo reservation_id — không join theo date vì posting date
+    -- (revenue_date) thường khác business_date (stay night).
+    -- Dùng DISTINCT ON reservation để lấy attributes một lần, tránh fan-out.
+    with folio as (
+        select
+            reservation_id,
+            sum(posted_amount) as revenue
+        from analytics.fct_folio_line
+        where revenue_date between %(start_date)s and %(end_date)s
+          and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
+          and revenue_category != 'Tax'
+        group by reservation_id
+    ),
+    res_attrs as (
+        -- Lấy attributes của reservation (1 row per reservation_id)
+        select distinct on (reservation_id)
+            reservation_id,
+            coalesce(market_code, 'Unknown')    as market_code,
+            coalesce(rate_plan_code, 'Unknown') as rate_plan_code,
+            coalesce(room_type, 'Unknown')      as room_type,
+            reservation_status
+        from analytics.fct_reservation_night
+        where (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
+        order by reservation_id, business_date
+    )
     select
-        coalesce(market_code, 'Unknown')        as market_code,
-        coalesce(rate_plan_code, 'Unknown')     as rate_plan_code,
-        coalesce(room_type, 'Unknown')           as room_type,
-        sum(night_amount)                        as revenue,
-        count(*)                                 as room_nights
-    from analytics.fct_reservation_night
-    where business_date between %(start_date)s and %(end_date)s
-      and reservation_status not in ('Cancelled', 'NoShow')
-      and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
-    group by market_code, rate_plan_code, room_type
+        coalesce(r.market_code, 'Unknown')    as market_code,
+        coalesce(r.rate_plan_code, 'Unknown') as rate_plan_code,
+        coalesce(r.room_type, 'Unknown')      as room_type,
+        sum(f.revenue)                        as revenue,
+        count(*)                              as transactions
+    from folio f
+    left join res_attrs r on f.reservation_id = r.reservation_id
+    where coalesce(r.reservation_status, '') not in ('Cancelled', 'NoShow')
+    group by r.market_code, r.rate_plan_code, r.room_type
 """
 
 
