@@ -19,7 +19,7 @@ class ReservationExtractor:
         params = {
             "arrivalStartDate": arrival_start_date,
             "arrivalEndDate": arrival_end_date,
-            "limit": 100,
+            "limit": 1000,
         }
 
         response = await self.client.fetch_all(endpoint=endpoint, params=params)
@@ -38,7 +38,7 @@ class ReservationExtractor:
         endpoint = f"/rsv/v1/hotels/{settings.opera_hotel_id}/reservations"
         params = {
             "reservationStatuses": _ACTIVE_STATUSES,
-            "limit": 100,
+            "limit": 1000,
         }
 
         response = await self.client.fetch_all(endpoint=endpoint, params=params)
