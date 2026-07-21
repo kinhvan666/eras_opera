@@ -4,7 +4,7 @@ import streamlit as st
 
 from data.repository import fetch_revenue_actual, fetch_revenue_breakdown
 from ui.components import chart_wrapper
-from ui.i18n import t
+from ui.i18n import t, t_code
 
 # Stacked chart — Option 2 Analogous/Categorical
 ROOM_COLOR    = "#2563EB"  # Deep Blue
@@ -36,6 +36,10 @@ def _hbar(data, x_col, y_col, color, x_title, y_title):
     """Horizontal bar chart sorted descending by value."""
     data = data.copy().sort_values(x_col, ascending=True)
     data["_label"] = data[x_col].apply(_fmt_label)
+    
+    # Map code to friendly description/name
+    data["_desc"] = data[y_col].apply(lambda x: t_code(y_col, x))
+    
     bars = alt.Chart(data).mark_bar(
         color=color, opacity=0.85,
         cornerRadiusTopRight=2, cornerRadiusBottomRight=2
@@ -44,11 +48,12 @@ def _hbar(data, x_col, y_col, color, x_title, y_title):
         x=alt.X(f"{x_col}:Q", title=x_title,
                 axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
         tooltip=[
-            alt.Tooltip(f"{y_col}:N", title=y_title),
+            alt.Tooltip(f"{y_col}:N", title="Mã/Code"),
+            alt.Tooltip("_desc:N", title=y_title),
             alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
         ],
     )
-    labels = bars.mark_text(align="left", dx=4, fontSize=10).encode(
+    labels = bars.mark_text(align="left", dx=4, fontSize=12, color="#E2E8F0").encode(
         text=alt.Text("_label:N")
     )
     return (bars + labels).properties(height=max(180, len(data) * 36))
@@ -114,7 +119,7 @@ def draw(start_date, end_date, hotel_id=None):
 
             if by_month:
                 labels = alt.Chart(totals).mark_text(
-                    align="center", baseline="bottom", dy=-4, fontSize=10, color="#374151"
+                    align="center", baseline="bottom", dy=-4, fontSize=13, color="#E2E8F0"
                 ).encode(
                     x=x_enc_tot,
                     y=alt.Y("posted_amount:Q"),

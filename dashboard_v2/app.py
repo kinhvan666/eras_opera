@@ -62,9 +62,9 @@ except Exception:
 
 # Header: pure HTML flexbox — logo+title bên trái cao hơn, EN/VI/↻/data-as-of bên phải sát cạnh ngang xám
 lang = st.session_state["lang"]
-_btn_base = "display:inline-block;padding:5px 14px;font-size:14px;font-weight:500;text-decoration:none;cursor:pointer;border:1px solid #DEE2E6;transition:all 0.15s ease-in-out"
-_active_state = "background:#1E40AF;color:#fff;border-color:#1E40AF;z-index:2;position:relative"
-_inactive_state = "background:#fff;color:#374151;border-color:#DEE2E6;position:relative"
+_btn_base = "display:inline-block;padding:5px 14px;font-size:14px;font-weight:500;text-decoration:none;cursor:pointer;border:1px solid var(--border);transition:all 0.15s ease-in-out"
+_active_state = "background:var(--accent-blue);color:#fff;border-color:var(--accent-blue);z-index:2;position:relative"
+_inactive_state = "background:var(--bg-card);color:var(--text-secondary);border-color:var(--border);position:relative"
 
 _btn_left = f"{_btn_base};border-top-left-radius:6px;border-bottom-left-radius:6px;margin-right:-1px"
 _btn_middle = f"{_btn_base};border-radius:0;margin-right:-1px"
@@ -80,14 +80,14 @@ st.markdown(f"""
   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 10px 0">
     <div style="display:flex;align-items:center;gap:12px">
       <img src="data:image/png;base64,{logo_b64}" style="height:44px;width:auto">
-      <span style="font-size:22px;font-weight:700;color:#1E40AF;letter-spacing:-0.3px">{t('app.title')}</span>
+      <span style="font-size:22px;font-weight:700;background:linear-gradient(90deg, #FFFFFF 0%, #93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px">{t('app.title')}</span>
     </div>
   </div>
   <!-- Row 2: Buttons & Data as of, aligned to the bottom divider -->
-  <div style="display:flex;justify-content:flex-end;align-items:flex-end;padding:0 0 8px 0;border-bottom:1px solid #DEE2E6;margin-bottom:16px">
+  <div style="display:flex;justify-content:flex-end;align-items:flex-end;padding:0 0 8px 0;border-bottom:1px solid var(--border);margin-bottom:16px">
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
       <div style="display:flex;align-items:center"><a href="?lang=en" target="_self" style="{style_en}">{t('lang.en')}</a><a href="?lang=vi" target="_self" style="{style_vi}">{t('lang.vi')}</a><a href="?_refresh=1" target="_self" style="{style_refresh}" title="{t('header.refresh_title')}">↻</a></div>
-      <span style="font-size:11px;color:#9CA3AF;font-style:italic;white-space:nowrap">{t('header.data_as_of', date=as_of_str)}</span>
+      <span style="font-size:11px;color:var(--text-secondary);font-style:italic;white-space:nowrap">{t('header.data_as_of', date=as_of_str)}</span>
     </div>
   </div>
 </div>
@@ -96,15 +96,15 @@ st.markdown(f"""
 # Row 2: Filters
 today = date.today()
 
-def _set_preset(start):
-    st.session_state["from_input"] = start
-    st.session_state["to_input"] = date.today()
-
 # Khởi tạo session state mặc định nếu chưa có — tránh conflict với preset buttons
 if "from_input" not in st.session_state:
     st.session_state["from_input"] = today - timedelta(days=DEFAULT_DATE_RANGE_DAYS)
 if "to_input" not in st.session_state:
     st.session_state["to_input"] = today
+
+def _set_preset(start):
+    st.session_state["from_input"] = start
+    st.session_state["to_input"] = date.today()
 
 try:
     props_df = fetch_properties()
@@ -117,7 +117,7 @@ except Exception as e:
     st.warning(t("msg.load_properties_err", e=e))
 
 c_prop, c_from, c_to, c_30, c_90, c_mtd, c_ytd = st.columns(
-    [2.5, 1.5, 1.5, 0.7, 0.7, 0.75, 0.75]
+    [2.0, 1.3, 1.3, 0.85, 0.85, 0.85, 0.85]
 )
 with c_prop:
     property_label = st.selectbox(t("filter.property"), list(prop_map.keys()))
@@ -163,24 +163,26 @@ else:
     def g(d, k):
         return d.get(k) if d else None
 
-    row1 = st.columns(5)
+    # Hàng 1: Chỉ số cốt lõi kinh doanh (Core Metrics)
+    row1 = st.columns(4)
     with row1[0]:
         kpi_card(t("kpi.revenue"), fmt_vnd(actual_revenue), actual_revenue, prior_actual_revenue)
     with row1[1]:
-        kpi_card(t("kpi.occupancy"), f"{current['occupancy'] * 100:.1f}%", current["occupancy"], g(prior, "occupancy"))
-    with row1[2]:
-        kpi_card(t("kpi.adr"), fmt_vnd(actual_adr), actual_adr, prior_actual_adr)
-    with row1[3]:
-        kpi_card(t("kpi.revpar"), fmt_vnd(actual_revpar), actual_revpar, prior_actual_revpar)
-    with row1[4]:
-        kpi_card(t("kpi.reservations"), f"{current['reservations']:,.0f}", current["reservations"], g(prior, "reservations"))
-
-    row2 = st.columns(5)
-    with row2[0]:
         kpi_card(t("kpi.room_nights"), f"{current['room_nights']:,.0f}", current["room_nights"], g(prior, "room_nights"))
+    with row1[2]:
+        kpi_card(t("kpi.occupancy"), f"{current['occupancy'] * 100:.1f}%", current["occupancy"], g(prior, "occupancy"))
+    with row1[3]:
+        kpi_card(t("kpi.adr"), fmt_vnd(actual_adr), actual_adr, prior_actual_adr)
+
+    # Hàng 2: Chỉ số hiệu suất & Quy mô (Efficiency & Volume Metrics)
+    row2 = st.columns(4)
+    with row2[0]:
+        kpi_card(t("kpi.revpar"), fmt_vnd(actual_revpar), actual_revpar, prior_actual_revpar)
     with row2[1]:
-        kpi_card(t("kpi.lead_time"), f"{current['avg_lead_time']:.1f}d", current["avg_lead_time"], g(prior, "avg_lead_time"), higher_is_better=False)
+        kpi_card(t("kpi.reservations"), f"{current['reservations']:,.0f}", current["reservations"], g(prior, "reservations"))
     with row2[2]:
+        kpi_card(t("kpi.lead_time"), f"{current['avg_lead_time']:.1f} ngày", current["avg_lead_time"], g(prior, "avg_lead_time"), higher_is_better=False)
+    with row2[3]:
         kpi_card(t("kpi.cancel_rate"), f"{current['cancellation_rate'] * 100:.1f}%", current["cancellation_rate"], g(prior, "cancellation_rate"), higher_is_better=False)
 
 # Analytical tabs

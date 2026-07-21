@@ -2,7 +2,7 @@ import streamlit as st
 
 T = {
     "en": {
-        "app.title": "PMS Dashboard",
+        "app.title": "COSTAMIGO PMS Dashboard",
         "header.refresh_title": "Reload latest data",
         "header.data_as_of": "Data as of {date}",
         "lang.en": "EN", "lang.vi": "VI",
@@ -56,7 +56,7 @@ T = {
         "msg.no_future_res": "No future reservations for pickup analysis.",
     },
     "vi": {
-        "app.title": "PMS Dashboard",
+        "app.title": "COSTAMIGO PMS Dashboard",
         "header.refresh_title": "Tải lại dữ liệu mới nhất",
         "header.data_as_of": "Dữ liệu tính đến {date}",
         "lang.en": "EN", "lang.vi": "VI",
@@ -115,3 +115,109 @@ T = {
 def t(key, **kwargs):
     lang = st.session_state.get("lang", "en")
     return T[lang].get(key, T["en"][key]).format(**kwargs)
+
+
+MAPS = {
+    "vi": {
+        "market_code": {
+            "TAG": "Travel Agent Group (Đoàn lữ hành)",
+            "TAF": "Travel Agent FIT (Khách lẻ qua lữ hành)",
+            "SYS": "System Booking (Đặt qua hệ thống)",
+            "DIG": "Digital / Direct FIT (Khách lẻ trực tiếp / kênh số)",
+            "COF": "Corporate FIT (Khách lẻ doanh nghiệp)",
+            "FIX": "Corporate Fixed (Khách doanh nghiệp hợp đồng cố định)",
+            "ING": "Internet Group (Đoàn qua internet)",
+            "COG": "Corporation GIT (Đoàn doanh nghiệp)",
+            "COM": "Company (Công ty / Doanh nghiệp)",
+            "INF": "In-house / Compliment (Nội bộ / Miễn phí)",
+            "OTA": "Online Travel Agency (Đại lý trực tuyến)",
+            "OTH": "Other (Phân khúc khác)",
+            "COV": "Corporate Volume (Doanh nghiệp số lượng lớn)",
+            "Unknown": "Chưa rõ (Unknown)",
+        },
+        "room_type": {
+            "PM": "Posting Master (Phòng ảo gom hóa đơn)",
+            "3DP": "3-Bedroom Deluxe Penthouse (Biệt thự thông tầng 3 phòng ngủ)",
+            "4OP": "4-Bedroom Ocean Penthouse (Biệt thự thông tầng hướng biển 4 phòng ngủ)",
+            "PF": "Presidential Suite (Phòng Tổng thống)",
+            "DGV": "Deluxe Garden View (Phòng Deluxe hướng vườn)",
+            "DNK": "Deluxe King (Phòng Deluxe giường đôi King)",
+            "3GP": "3-Bedroom Garden Penthouse (Biệt thự thông tầng hướng vườn 3 phòng ngủ)",
+            "DOV": "Deluxe Ocean View (Phòng Deluxe hướng biển)",
+            "STD": "Standard (Phòng Tiêu chuẩn)",
+            "DLX": "Deluxe (Phòng Deluxe)",
+            "JRS": "Junior Suite (Phòng Suite nhỏ)",
+            "PRS": "Presidential Suite (Phòng Tổng thống)",
+            "VIL": "Villa (Biệt thự)",
+            "Unknown": "Chưa rõ (Unknown)",
+        },
+        "source_of_business": {
+            "EML": "Email (Đặt phòng qua Email)",
+            "INTERNAL": "Internal (Nội bộ)",
+            "BT": "Business Travel (Khách công tác / Doanh nghiệp)",
+            "CMP": "Complimentary (Miễn phí / Biếu tặng)",
+            "VCH": "Voucher (Đặt phòng qua Voucher)",
+            "FIX": "Corporate Fixed (Hợp đồng cố định)",
+            "EX": "Excursion (Đoàn du lịch / Tour)",
+            "DRC": "Direct (Đặt trực tiếp)",
+            "LWI": "Local Walk-in (Khách vãng lai địa phương)",
+            "WEBSITE": "Website (Đặt qua website)",
+            "HSU": "House Use (Nội bộ sử dụng)",
+            "Unknown": "Chưa rõ (Unknown)",
+        }
+    },
+    "en": {
+        "market_code": {
+            "TAG": "Travel Agent Group",
+            "TAF": "Travel Agent FIT",
+            "SYS": "System Booking",
+            "DIG": "Digital / Direct FIT",
+            "COF": "Corporate FIT",
+            "FIX": "Corporate Fixed",
+            "ING": "Internet Group",
+            "COG": "Corporation GIT",
+            "COM": "Company",
+            "INF": "In-house / Compliment",
+            "OTA": "Online Travel Agency",
+            "OTH": "Other Market Segment",
+            "COV": "Corporate Volume",
+            "Unknown": "Unknown",
+        },
+        "room_type": {
+            "PM": "Posting Master (Billing Account)",
+            "3DP": "3-Bedroom Deluxe Penthouse",
+            "4OP": "4-Bedroom Ocean Penthouse",
+            "PF": "Presidential Suite",
+            "DGV": "Deluxe Garden View",
+            "DNK": "Deluxe King",
+            "3GP": "3-Bedroom Garden Penthouse",
+            "DOV": "Deluxe Ocean View",
+            "STD": "Standard Room",
+            "DLX": "Deluxe Room",
+            "JRS": "Junior Suite",
+            "PRS": "Presidential Suite",
+            "VIL": "Villa",
+            "Unknown": "Unknown",
+        },
+        "source_of_business": {
+            "EML": "Email Booking",
+            "INTERNAL": "Internal / In-house",
+            "BT": "Business Travel / Corporate",
+            "CMP": "Complimentary / Complimentary Room",
+            "VCH": "Voucher Booking",
+            "FIX": "Corporate Fixed / Contract",
+            "EX": "Excursion / Tour Agent",
+            "DRC": "Direct / Walk-in",
+            "LWI": "Local Walk-in",
+            "WEBSITE": "Website Booking",
+            "HSU": "House Use",
+            "Unknown": "Unknown",
+        }
+    }
+}
+
+
+def t_code(category, code):
+    lang = st.session_state.get("lang", "en")
+    cat_map = MAPS.get(lang, MAPS["en"]).get(category, {})
+    return cat_map.get(code, code)

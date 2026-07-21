@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #020617; /* Slate Obsidian page background */
+  --bg-card: #0E1223;    /* Slate Card background */
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --accent-blue: #3B82F6;
+  --kpi-positive: #34D399;
+  --kpi-negative: #F87171;
+  --kpi-neutral: #94A3B8;
+  --badge-estimated-bg: #F59E0B;
+  --badge-estimated-text: #020617;
+  --border: #1E293B;     /* Slate 800 subtle borders */
+  --grid-gap: 16px;
+  --card-padding: 16px;
+  --font-sans: 'Inter', sans-serif;
+}
+
+html, body, [class*="css"] {
+  font-family: var(--font-sans);
+}
+
+/* Apply background color to Streamlit app container */
+[data-testid="stAppViewContainer"] {
+  background-color: var(--bg-primary);
+}
+
+/* Hide Streamlit default header bar and footer */
+[data-testid="stHeader"],
+[data-testid="stHeader"] *,
+header[data-testid="stHeader"],
+.stApp > header,
+#stDecoration {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+}
+[data-testid="stToolbar"] {
+  display: none !important;
+}
+footer, footer * {
+  display: none !important;
+}
+.stApp {
+  padding-top: 0 !important;
+}
+
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px; /* Smooth rounded corners */
+  padding: var(--card-padding);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease-in-out; /* Smooth transition for hover effects */
+}
+
+/* Premium lift-and-shadow hover state in dark mode */
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  border-color: #60A5FA; /* Bright accent border on hover */
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .kpi-value {
+    font-size: 18px;
+  }
+}
+
+
+/* Fix toolbar clip in st.container(height=...) scroll containers.
+   Directly override top so toolbar sits inside the container regardless of inner spacing. */
+[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"] [data-testid="stElementToolbar"] {
+    top: 4px !important;
+    z-index: 100 !important;
+}
+
+/* Hide Vega-Lite's own toolbar (⋯) — overlaps Streamlit toolbar; not needed in dashboard */
+.vega-embed > details {
+    display: none !important;
+}
+.vega-embed > details[open] > summary {
+    opacity: 1 !important;
+}
+
+.kpi-badge-est {
+  background: var(--badge-estimated-bg);
+  color: var(--badge-estimated-text);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 6px;
+}
