@@ -4,6 +4,7 @@ import streamlit as st
 
 from data.repository import fetch_revenue_breakdown, fetch_revenue_actual
 from ui.components import chart_wrapper
+from ui.i18n import t
 
 # Stacked chart — Option 2 Analogous/Categorical
 ROOM_COLOR    = "#2563EB"  # Deep Blue
@@ -58,11 +59,11 @@ def draw(start_date, end_date, hotel_id=None):
     bdf = fetch_revenue_breakdown(start_date, end_date, hotel_id)
 
     if "rev_tab_view" not in st.session_state:
-        st.session_state["rev_tab_view"] = "By Month"
+        st.session_state["rev_tab_view"] = t("rev.by_month")
     by_month = st.radio(
-        "View", ["By Month", "By Day"],
+        t("rev.view"), [t("rev.by_month"), t("rev.by_day")],
         horizontal=True, label_visibility="collapsed", key="rev_tab_view"
-    ) == "By Month"
+    ) == t("rev.by_month")
 
     # ── Row 1: Revenue trend + Market Segment ───────────────────────────────
     col1, col2 = st.columns(2)
@@ -77,63 +78,65 @@ def draw(start_date, end_date, hotel_id=None):
                 src = df_chart.groupby(
                     ["month", "revenue_category"], as_index=False
                 )["posted_amount"].sum()
-                x_enc     = alt.X("month:N", title="Month",
-                                   sort=sorted(src["month"].unique()))
-                x_tooltip = alt.Tooltip("month:N", title="Month")
+                x_enc     = alt.X("month:N", title=t("axis.month"),
+                                    sort=sorted(src["month"].unique()))
+                x_tooltip = alt.Tooltip("month:N", title=t("axis.month"))
             else:
                 src       = df_chart
-                x_enc     = alt.X("revenue_date:T", title="Date")
-                x_tooltip = alt.Tooltip("revenue_date:T", title="Date",
+                x_enc     = alt.X("revenue_date:T", title=t("axis.date"))
+                x_tooltip = alt.Tooltip("revenue_date:T", title=t("axis.date"),
                                          format="%d/%m/%Y")
-            title = "Revenue by Month" if by_month else "Revenue by Day"
+            title = t("chart.revenue_by_month") if by_month else t("chart.revenue_by_day")
             with chart_wrapper(title, height=340):
                 # Pre-compute totals for label layer
                 x_col = "month" if by_month else "revenue_date"
                 totals = src.groupby(x_col, as_index=False)["posted_amount"].sum()
                 totals["_label"] = totals["posted_amount"].apply(_fmt_label)
-                x_enc_tot = alt.X(f"{x_col}:N", title="Month" if by_month else "Date",
-                                   sort=sorted(src[x_col].unique()) if by_month else None)
+                x_enc_tot = alt.X(f"{x_col}:N", title=t("axis.month") if by_month else t("axis.date"),
+                                    sort=sorted(src[x_col].unique()) if by_month else None)
                 y_max = totals["posted_amount"].max() * 1.15
 
                 bars = alt.Chart(src).mark_bar(
                     cornerRadiusTopLeft=2, cornerRadiusTopRight=2
                 ).encode(
                     x=x_enc,
-                    y=alt.Y("sum(posted_amount):Q", title="Revenue (₫)",
+                    y=alt.Y("sum(posted_amount):Q", title=t("axis.revenue"),
                             axis=alt.Axis(labelExpr=VND_LABEL_EXPR),
                             scale=alt.Scale(domainMax=y_max)),
                     color=alt.Color(
-                        "revenue_category:N", title="Category",
+                        "revenue_category:N", title=t("axis.category"),
                         scale=alt.Scale(domain=CATEGORY_ORDER, range=CATEGORY_COLORS),
                     ),
                     order=alt.Order("revenue_category:N", sort="ascending"),
                     tooltip=[
                         x_tooltip,
-                        alt.Tooltip("revenue_category:N", title="Category"),
+                        alt.Tooltip("revenue_category:N", title=t("axis.category")),
                         alt.Tooltip("sum(posted_amount):Q", format=",.0f",
-                                    title="Revenue ₫"),
+                                    title=t("axis.revenue")),
                     ],
                 ).properties(height=270)
 
-                labels = alt.Chart(totals).mark_text(
-                    align="center", baseline="bottom", dy=-4, fontSize=10, color="#374151"
-                ).encode(
-                    x=x_enc_tot,
-                    y=alt.Y("posted_amount:Q"),
-                    text=alt.Text("_label:N"),
-                )
-
-                st.altair_chart(bars + labels, use_container_width=True)
+                if by_month:
+                    labels = alt.Chart(totals).mark_text(
+                        align="center", baseline="bottom", dy=-4, fontSize=10, color="#374151"
+                    ).encode(
+                        x=x_enc_tot,
+                        y=alt.Y("posted_amount:Q"),
+                        text=alt.Text("_label:N"),
+                    )
+                    st.altair_chart(bars + labels, use_container_width=True)
+                else:
+                    st.altair_chart(bars, use_container_width=True)
         else:
-            st.info("No posting data for selected range.")
+            st.info(t("msg.no_posting"))
 
     with col2:
         if not bdf.empty:
             seg = (bdf.groupby("market_code", as_index=False)["revenue"]
                       .sum().sort_values("revenue", ascending=False))
-            with chart_wrapper("Revenue by Market Segment", height=340):
+            with chart_wrapper(t("chart.revenue_by_segment"), height=340):
                 st.altair_chart(
-                    _hbar(seg, "revenue", "market_code", SUB_BAR_COLOR, "Revenue ₫", "Segment"),
+                    _hbar(seg, "revenue", "market_code", SUB_BAR_COLOR, t("axis.revenue"), t("axis.segment")),
                     use_container_width=True,
                 )
 
@@ -144,10 +147,10 @@ def draw(start_date, end_date, hotel_id=None):
         if not bdf.empty:
             rate = (bdf.groupby("rate_plan_code", as_index=False)["revenue"]
                        .sum().sort_values("revenue", ascending=False))
-            with chart_wrapper("Revenue by Rate Plan", height=340):
+            with chart_wrapper(t("chart.revenue_by_rateplan"), height=340):
                 st.altair_chart(
                     _hbar(rate, "revenue", "rate_plan_code", SUB_BAR_COLOR,
-                          "Revenue ₫", "Rate Plan"),
+                          t("axis.revenue"), t("axis.rate_plan")),
                     use_container_width=True,
                 )
 
@@ -155,12 +158,12 @@ def draw(start_date, end_date, hotel_id=None):
         if not bdf.empty:
             room = (bdf.groupby("room_type", as_index=False)["revenue"]
                        .sum().sort_values("revenue", ascending=False))
-            with chart_wrapper("Revenue by Room Type", height=340):
+            with chart_wrapper(t("chart.revenue_by_roomtype"), height=340):
                 st.altair_chart(
                     _hbar(room, "revenue", "room_type", SUB_BAR_COLOR,
-                          "Revenue ₫", "Room Type"),
+                          t("axis.revenue"), t("axis.room_type")),
                     use_container_width=True,
                 )
 
     if bdf.empty:
-        st.info("No breakdown data for selected range.")
+        st.info(t("msg.no_breakdown"))

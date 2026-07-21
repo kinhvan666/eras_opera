@@ -3,6 +3,7 @@ import streamlit as st
 
 from data.repository import fetch_kpi_daily_segmented
 from ui.components import chart_wrapper
+from ui.i18n import t
 
 BAR_COLOR = "#1D4ED8"
 
@@ -16,37 +17,37 @@ def draw(start_date, end_date, hotel_id=None):
     col1, col2 = st.columns(2)
 
     with col1:
-        c = chart_wrapper("Room Nights by Market", height=350)
+        c = chart_wrapper(t("chart.roomnights_by_market"), height=350)
         with c:
             if market_df.empty:
-                st.info("No market data")
+                st.info(t("msg.no_market"))
             else:
                 agg = market_df.sort_values("room_nights", ascending=False)
                 st.altair_chart(
                     alt.Chart(agg).mark_bar(
                         color=BAR_COLOR, cornerRadiusTopLeft=3, cornerRadiusTopRight=3
                     ).encode(
-                        x=alt.X("market_code:N", sort="-y", title="Market"),
-                        y=alt.Y("room_nights:Q", title="Room Nights"),
-                        tooltip=["market_code", "room_nights"],
+                        x=alt.X("market_code:N", sort="-y", title=t("axis.market")),
+                        y=alt.Y("room_nights:Q", title=t("axis.room_nights")),
+                        tooltip=[alt.Tooltip("market_code:N"), alt.Tooltip("room_nights:Q", title=t("axis.room_nights"))],
                     ).properties(height=280),
                     use_container_width=True,
                 )
 
     with col2:
-        c = chart_wrapper("Room Nights by Source", height=350)
+        c = chart_wrapper(t("chart.roomnights_by_source"), height=350)
         with c:
             if source_df.empty:
-                st.info("No source data")
+                st.info(t("msg.no_source"))
             else:
                 agg = source_df.sort_values("room_nights")
                 st.altair_chart(
                     alt.Chart(agg).mark_bar(
                         color=BAR_COLOR, cornerRadiusTopRight=3, cornerRadiusBottomRight=3
                     ).encode(
-                        y=alt.Y("source_of_business:N", sort="-x", title="Source"),
-                        x=alt.X("room_nights:Q", title="Room Nights"),
-                        tooltip=["source_of_business", "room_nights"],
+                        y=alt.Y("source_of_business:N", sort="-x", title=t("axis.source")),
+                        x=alt.X("room_nights:Q", title=t("axis.room_nights")),
+                        tooltip=[alt.Tooltip("source_of_business:N"), alt.Tooltip("room_nights:Q", title=t("axis.room_nights"))],
                     ).properties(height=280),
                     use_container_width=True,
                 )
@@ -55,37 +56,37 @@ def draw(start_date, end_date, hotel_id=None):
     col3, col4 = st.columns(2)
 
     with col3:
-        c = chart_wrapper("Room Nights by Rate Plan", height=350)
+        c = chart_wrapper(t("chart.roomnights_by_rateplan"), height=350)
         with c:
             if rate_df.empty:
-                st.info("No rate plan data")
+                st.info(t("msg.no_rateplan"))
             else:
                 agg = rate_df.sort_values("room_nights", ascending=False)
                 st.altair_chart(
                     alt.Chart(agg).mark_bar(
                         color=BAR_COLOR, cornerRadiusTopLeft=3, cornerRadiusTopRight=3
                     ).encode(
-                        x=alt.X("rate_plan_code:N", sort="-y", title="Rate Plan"),
-                        y=alt.Y("room_nights:Q", title="Room Nights"),
-                        tooltip=["rate_plan_code", "room_nights"],
+                        x=alt.X("rate_plan_code:N", sort="-y", title=t("axis.rate_plan")),
+                        y=alt.Y("room_nights:Q", title=t("axis.room_nights")),
+                        tooltip=[alt.Tooltip("rate_plan_code:N"), alt.Tooltip("room_nights:Q", title=t("axis.room_nights"))],
                     ).properties(height=280),
                     use_container_width=True,
                 )
 
     with col4:
-        c = chart_wrapper("Room Nights by Room Type", height=350)
+        c = chart_wrapper(t("chart.roomnights_by_roomtype"), height=350)
         with c:
             if room_df.empty:
-                st.info("No room type data")
+                st.info(t("msg.no_roomtype"))
             else:
                 agg = room_df.sort_values("room_nights", ascending=False)
                 st.altair_chart(
                     alt.Chart(agg).mark_bar(
                         color=BAR_COLOR, cornerRadiusTopRight=3, cornerRadiusBottomRight=3
                     ).encode(
-                        y=alt.Y("room_type:N", sort="-x", title="Room Type"),
-                        x=alt.X("room_nights:Q", title="Room Nights"),
-                        tooltip=["room_type", "room_nights"],
+                        y=alt.Y("room_type:N", sort="-x", title=t("axis.room_type")),
+                        x=alt.X("room_nights:Q", title=t("axis.room_nights")),
+                        tooltip=[alt.Tooltip("room_type:N"), alt.Tooltip("room_nights:Q", title=t("axis.room_nights"))],
                     ).properties(height=280),
                     use_container_width=True,
                 )
