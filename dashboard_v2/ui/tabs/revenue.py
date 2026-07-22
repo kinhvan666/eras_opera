@@ -48,7 +48,7 @@ def _gradient_hbar(data, x_col, y_col, x_title, y_title, top_n=8):
     ).encode(
         y=alt.Y(f"{y_col}:N", sort="-x", title=y_title),
         x=alt.X(f"{x_col}:Q", title=x_title, axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
-        color=alt.Color(f"{x_col}:Q", scale=alt.Scale(scheme="tealblues"), legend=None),
+        color=alt.value(C["primary"]),
         tooltip=[
             alt.Tooltip(f"{y_col}:N", title="Mã / Code"),
             alt.Tooltip("_desc:N", title=y_title),
@@ -63,7 +63,7 @@ def _gradient_hbar(data, x_col, y_col, x_title, y_title, top_n=8):
 
 def _gradient_vbar(data, x_col, y_col, x_title, y_title, top_n=7):
     C = chart_colors()
-    """Vertical column chart with gradient color ranking to break visual monotony."""
+    """Vertical column chart with solid color for high contrast."""
     data = data.copy().sort_values(x_col, ascending=False)
     if len(data) > top_n:
         top_df = data.iloc[:top_n].copy()
@@ -82,14 +82,14 @@ def _gradient_vbar(data, x_col, y_col, x_title, y_title, top_n=7):
     ).encode(
         x=alt.X(f"{y_col}:N", sort="-y", title=y_title, axis=alt.Axis(labelAngle=-25)),
         y=alt.Y(f"{x_col}:Q", title=x_title, axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
-        color=alt.Color(f"{x_col}:Q", scale=alt.Scale(scheme="blues"), legend=None),
+        color=alt.value(C["primary"]),
         tooltip=[
             alt.Tooltip(f"{y_col}:N", title="Mã/Code"),
             alt.Tooltip("_desc:N", title=y_title),
             alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
         ],
     )
-    labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=11, fontWeight=600, color=C["text_label"]).encode(
+    labels = bars.mark_text(align="center", baseline="bottom", dy=-8, fontSize=11, fontWeight=600, color=C["text_label"]).encode(
         text=alt.Text("_label:N")
     )
     return (bars + labels).properties(height=280)

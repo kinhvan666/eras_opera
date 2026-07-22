@@ -6,9 +6,9 @@ _DARK = {
     "positive": "#34D399", "negative": "#F87171",
 }
 _LIGHT = {
-    "primary": "#2563EB", "accent": "#3B82F6", "warn": "#D97706",
-    "gray": "#64748B", "text_label": "#1E293B", "band": "#F1F5F9",
-    "positive": "#059669", "negative": "#DC2626",
+    "primary": "#1E40AF", "accent": "#2563EB", "warn": "#D97706",
+    "gray": "#475569", "text_label": "#0F172A", "band": "#E2E8F0",
+    "positive": "#047857", "negative": "#B91C1C",
 }
 
 def current_theme() -> str:
