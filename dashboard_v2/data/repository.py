@@ -57,13 +57,22 @@ def _aggregate(df):
     }
 
 
+def _prior_range(start_date, end_date):
+    """Kỳ trước = khoảng liền trước có cùng độ dài, KHÔNG chồng lấn kỳ hiện tại.
+    Ví dụ: 01/01–22/07 (203 ngày) → kỳ trước 12/06/25–31/12/25."""
+    range_days = (end_date - start_date).days + 1
+    prior_end = start_date - timedelta(days=1)
+    prior_start = prior_end - timedelta(days=range_days - 1)
+    return prior_start, prior_end
+
+
 def fetch_kpi_summary(start_date, end_date, hotel_id=None):
     """Current vs prior-period aggregates for delta cards.
-    Per VALIDATE spec: WoW (shift 7d) for ranges <=14 days, MoM (shift 30d) for longer ranges."""
+    Prior period = non-overlapping preceding window of equal length;
+    returns None for prior when that window has no data (delta badge hidden)."""
     current = fetch_kpi_daily(start_date, end_date, hotel_id)
-    range_days = (end_date - start_date).days + 1
-    shift = timedelta(days=7 if range_days <= 14 else 30)
-    prior = fetch_kpi_daily(start_date - shift, end_date - shift, hotel_id)
+    prior_start, prior_end = _prior_range(start_date, end_date)
+    prior = fetch_kpi_daily(prior_start, prior_end, hotel_id)
     return _aggregate(current), _aggregate(prior)
 
 
@@ -196,11 +205,10 @@ def _fetch_revenue_actual_scalar(start_date, end_date, hotel_id=None):
 
 
 def fetch_revenue_actual_summary(start_date, end_date, hotel_id=None):
-    """Actual revenue KPI (excl. Tax) for current and prior period. Same shift logic as fetch_kpi_summary."""
-    range_days = (end_date - start_date).days + 1
-    shift = timedelta(days=7 if range_days <= 14 else 30)
+    """Actual revenue KPI (excl. Tax) for current and prior period. Same prior-range logic as fetch_kpi_summary."""
+    prior_start, prior_end = _prior_range(start_date, end_date)
     current_rev = _fetch_revenue_actual_scalar(start_date, end_date, hotel_id)
-    prior_rev = _fetch_revenue_actual_scalar(start_date - shift, end_date - shift, hotel_id)
+    prior_rev = _fetch_revenue_actual_scalar(prior_start, prior_end, hotel_id)
     return current_rev, prior_rev
 
 
@@ -246,13 +254,10 @@ def _fetch_adr_revpar_inputs(start_date, end_date, hotel_id=None):
 
 
 def fetch_adr_revpar_actual_summary(start_date, end_date, hotel_id=None):
-    """Actual ADR and RevPAR for current and prior period. Same 7d/30d shift as fetch_kpi_summary."""
-    range_days = (end_date - start_date).days + 1
-    shift = timedelta(days=7 if range_days <= 14 else 30)
+    """Actual ADR and RevPAR for current and prior period. Same prior-range logic as fetch_kpi_summary."""
+    prior_start, prior_end = _prior_range(start_date, end_date)
     curr_adr, curr_revpar = _fetch_adr_revpar_inputs(start_date, end_date, hotel_id)
-    prior_adr, prior_revpar = _fetch_adr_revpar_inputs(
-        start_date - shift, end_date - shift, hotel_id
-    )
+    prior_adr, prior_revpar = _fetch_adr_revpar_inputs(prior_start, prior_end, hotel_id)
     return curr_adr, curr_revpar, prior_adr, prior_revpar
 
 

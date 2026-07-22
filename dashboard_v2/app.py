@@ -88,97 +88,24 @@ with col_logo:
     ''', unsafe_allow_html=True)
 
 with col_user:
-    st.markdown('<div class="hdr-nav-box"></div>', unsafe_allow_html=True)
     st.markdown(f'''
     <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-bottom:6px;">
       <span style="color:var(--text-secondary);font-size:13px;font-weight:500;font-style:italic;">{t("header.welcome", name=user["display_name"])}</span>
       {admin_link}
     </div>
     ''', unsafe_allow_html=True)
-    
-    st.markdown("""<style>
-    div.hdr-nav-box { display: none; }
-    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        justify-content: flex-end !important;
-        align-items: center !important;
-        gap: 0px !important;
-        width: 100% !important;
-        margin-top: 2px !important;
-    }
-    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] > [data-testid="column"] {
-        flex: 0 0 auto !important;
-        width: auto !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-    }
-    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] [data-testid="stElementContainer"],
-    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] div.stButton {
-        width: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-    }
-    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] button {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 0 12px !important;
-        font-size: 12px !important;
-        font-weight: 500 !important;
-        height: 28px !important;
-        min-height: 28px !important;
-        max-height: 28px !important;
-        line-height: 28px !important;
-        border-radius: 0px !important;
-        margin: 0 -1px 0 0 !important;
-        width: auto !important;
-        position: relative !important;
-        box-sizing: border-box !important;
-        vertical-align: middle !important;
-        white-space: nowrap !important;
-        word-break: keep-all !important;
-        box-shadow: none !important;
-    }
-    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] button[kind="secondary"] {
-        border: 1px solid var(--border) !important;
-        background: var(--bg-card) !important;
-        color: var(--text-secondary) !important;
-    }
-    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] button[kind="primary"] {
-        border: 1px solid #3B82F6 !important;
-        background: #3B82F6 !important;
-        color: #ffffff !important;
-        z-index: 2 !important;
-    }
-    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] > [data-testid="column"]:first-child button {
-        border-top-left-radius: 6px !important;
-        border-bottom-left-radius: 6px !important;
-    }
-    [data-testid="column"]:has(div.hdr-nav-box) [data-testid="stHorizontalBlock"] > [data-testid="column"]:last-child button {
-        border-top-right-radius: 6px !important;
-        border-bottom-right-radius: 6px !important;
-    }
-    </style>""", unsafe_allow_html=True)
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
+    # Compact button group hugging the right edge
+    with st.container(horizontal=True, horizontal_alignment="right", gap=None, key="hdr_btns"):
         if st.button(t("lang.en"), key="hdr_en", type="primary" if lang == "en" else "secondary"):
             st.session_state["lang"] = "en"
             st.rerun()
-    with c2:
         if st.button(t("lang.vi"), key="hdr_vi", type="primary" if lang == "vi" else "secondary"):
             st.session_state["lang"] = "vi"
             st.rerun()
-    with c3:
         if st.button("↻", key="hdr_rf", type="secondary", help=t("header.refresh_title")):
             st.cache_data.clear()
             st.rerun()
-    with c4:
         if st.button("⎋", key="hdr_lo", type="secondary", help=t("auth.logout")):
             logout()
 

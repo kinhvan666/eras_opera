@@ -4,7 +4,10 @@ from ui.i18n import t
 
 
 def _delta_html(current, prior, fmt, higher_is_better=True):
+    # Ẩn badge khi kỳ trước không có dữ liệu (None / 0 / NaN) — không so sánh giả
     if prior is None or current is None or prior == 0:
+        return ""
+    if prior != prior or current != current:  # NaN check
         return ""
     pct = (current - prior) / abs(prior) * 100
     positive = pct >= 0 if higher_is_better else pct < 0
