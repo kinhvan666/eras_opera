@@ -2,7 +2,6 @@
 gatherUsageStats = false
 
 [theme]
-base = "dark"
 primaryColor = "#3B82F6"
 backgroundColor = "#020617"
 secondaryBackgroundColor = "#0E1223"

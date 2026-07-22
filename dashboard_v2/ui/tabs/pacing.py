@@ -8,13 +8,11 @@ from data.repository import fetch_kpi_pacing, fetch_kpi_pickup
 from ui.components import chart_wrapper
 from ui.i18n import t
 
-BLUE          = "#1D4ED8"
-SEMANTIC_POS  = "#059669"
-SEMANTIC_NEG  = "#DC2626"
-GRAY          = "#ADB5BD"
+from ui.theme import chart_colors
 
 
 def draw(start_date, end_date, hotel_id=None):
+    C = chart_colors()
     # Pacing always looks forward — ignore the dashboard's historical date filter
     today = date.today()
     pace_start = today
@@ -49,7 +47,7 @@ def draw(start_date, end_date, hotel_id=None):
                         y=alt.Y("occupancy:Q", title=t("axis.occupancy"), axis=alt.Axis(format="%")),
                         color=alt.Color("period_key:N",
                             scale=alt.Scale(domain=["current_occupancy", "prior_occupancy"],
-                                            range=[BLUE, GRAY]),
+                                            range=[C["primary"], C["gray"]]),
                             legend=alt.Legend(title=t("pacing.period")),
                             sort=None),
                         xOffset="period_key:N",
@@ -64,7 +62,7 @@ def draw(start_date, end_date, hotel_id=None):
                 occ_df = pace_df[["business_date", "current_occupancy"]].copy()
                 occ_df["business_date"] = occ_df["business_date"].astype(str)
                 area = alt.Chart(occ_df).mark_area(
-                    color=BLUE, opacity=0.25, line={"color": BLUE, "strokeWidth": 2}
+                    color=C["primary"], opacity=0.25, line={"color": C["primary"], "strokeWidth": 2}
                 ).encode(
                     x=alt.X("business_date:T", title=t("axis.date")),
                     y=alt.Y("current_occupancy:Q", title=t("pacing.occ_otb"),
@@ -105,7 +103,7 @@ def draw(start_date, end_date, hotel_id=None):
                             y=alt.Y("metric_key:N", sort=["revenue", "revpar", "adr", "occupancy"], title=None),
                             x=alt.X("Pace:Q", title=t("pacing.pace_pct_axis"), axis=alt.Axis(format="+.0f")),
                             color=alt.Color("Status:N",
-                                scale=alt.Scale(domain=["ahead", "behind"], range=[SEMANTIC_POS, SEMANTIC_NEG]),
+                                scale=alt.Scale(domain=["ahead", "behind"], range=[C["positive"], C["negative"]]),
                                 legend=None),
                             tooltip=[alt.Tooltip("Metric:N"), alt.Tooltip("Pace:Q", format="+.1f", title=t("pacing.pace_pct"))],
                         ).properties(height=200),
@@ -131,7 +129,7 @@ def draw(start_date, end_date, hotel_id=None):
             with col_chart:
                 st.altair_chart(
                     alt.Chart(pickup_renamed).mark_bar(
-                        color=BLUE, cornerRadiusTopLeft=3, cornerRadiusTopRight=3
+                        color=C["primary"], cornerRadiusTopLeft=3, cornerRadiusTopRight=3
                     ).encode(
                         x=alt.X(f"{col_window}:O", title=t("pacing.window_days")),
                         y=alt.Y(f"{col_rooms}:Q", title=t("pacing.room_nights_axis")),

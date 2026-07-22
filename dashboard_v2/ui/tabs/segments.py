@@ -7,9 +7,11 @@ import streamlit as st
 from data.repository import fetch_kpi_daily_segmented
 from ui.components import chart_wrapper
 from ui.i18n import t, t_code
+from ui.theme import chart_colors
 
 
 def _segment_hbar(df, code_col, val_col, x_title, y_title, top_n=None):
+    C = chart_colors()
     agg = df.groupby(code_col, as_index=False)[val_col].sum()
     agg = agg.sort_values(val_col, ascending=False).reset_index(drop=True)
     
@@ -48,7 +50,7 @@ def _segment_hbar(df, code_col, val_col, x_title, y_title, top_n=None):
     agg["_label"] = agg.apply(lambda r: f"{int(r[val_col]):,} ({r['_share']:.0%})", axis=1)
     
     bars = alt.Chart(agg).mark_bar(
-        color="#1D4ED8",
+        color=C["primary"],
         cornerRadiusTopRight=3,
         cornerRadiusBottomRight=3
     ).encode(
@@ -67,7 +69,7 @@ def _segment_hbar(df, code_col, val_col, x_title, y_title, top_n=None):
         align="left",
         dx=5,
         fontSize=11,
-        color="#E2E8F0"
+        color=C["text_label"]
     ).encode(
         text=alt.Text("_label:N")
     )

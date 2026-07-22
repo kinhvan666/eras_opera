@@ -12,9 +12,9 @@ def _delta_html(current, prior, fmt, higher_is_better=True):
     pct = (current - prior) / abs(prior) * 100
     positive = pct >= 0 if higher_is_better else pct < 0
     
-    # Modern Badge Capsule design for dark mode
-    bg_color = "rgba(52, 211, 153, 0.15)" if positive else "rgba(248, 113, 113, 0.15)"
-    text_color = "#34D399" if positive else "#F87171"
+    # Modern Badge Capsule design (uses CSS vars to adapt to theme)
+    bg_color = "color-mix(in srgb, var(--kpi-positive) 15%, transparent)" if positive else "color-mix(in srgb, var(--kpi-negative) 15%, transparent)"
+    text_color = "var(--kpi-positive)" if positive else "var(--kpi-negative)"
     arrow = "↑" if pct >= 0 else "↓"
     
     label = t("kpi.delta_label")

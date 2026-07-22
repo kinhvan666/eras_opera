@@ -6,12 +6,7 @@ from data.repository import fetch_revenue_actual, fetch_revenue_breakdown
 from ui.components import chart_wrapper
 from ui.i18n import t, t_code
 
-# Stacked chart — Luminous Neon Palette for Dark Mode
-ROOM_COLOR    = "#3B82F6"  # Electric Blue
-FNB_COLOR     = "#10B981"  # Emerald Green
-SC_COLOR      = "#F59E0B"  # Luminous Amber
-OTHER_COLOR   = "#8B5CF6"  # Electric Purple
-SUB_BAR_COLOR = "#1D4ED8"  # Sleek Blue for horizontal bar charts
+from ui.theme import chart_colors
 
 # Vega-Lite expression: abbreviate VND values on axes
 VND_LABEL_EXPR = (
@@ -22,7 +17,6 @@ VND_LABEL_EXPR = (
 )
 
 CATEGORY_ORDER  = ["Room", "FnB", "ServiceCharge", "Other"]
-CATEGORY_COLORS = [ROOM_COLOR, FNB_COLOR, SC_COLOR, OTHER_COLOR]
 
 
 def _fmt_label(v):
@@ -33,6 +27,7 @@ def _fmt_label(v):
 
 
 def _gradient_hbar(data, x_col, y_col, x_title, y_title, top_n=8):
+    C = chart_colors()
     """Horizontal bar chart with gradient color ranking and concise code labels."""
     data = data.copy().sort_values(x_col, ascending=False)
     if len(data) > top_n:
@@ -60,13 +55,14 @@ def _gradient_hbar(data, x_col, y_col, x_title, y_title, top_n=8):
             alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
         ],
     )
-    labels = bars.mark_text(align="left", dx=6, fontSize=11, fontWeight=600, color="#F8FAFC").encode(
+    labels = bars.mark_text(align="left", dx=6, fontSize=11, fontWeight=600, color=C["text_label"]).encode(
         text=alt.Text("_label:N")
     )
     return (bars + labels).properties(height=280)
 
 
 def _gradient_vbar(data, x_col, y_col, x_title, y_title, top_n=7):
+    C = chart_colors()
     """Vertical column chart with gradient color ranking to break visual monotony."""
     data = data.copy().sort_values(x_col, ascending=False)
     if len(data) > top_n:
@@ -93,13 +89,14 @@ def _gradient_vbar(data, x_col, y_col, x_title, y_title, top_n=7):
             alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
         ],
     )
-    labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=11, fontWeight=600, color="#F8FAFC").encode(
+    labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=11, fontWeight=600, color=C["text_label"]).encode(
         text=alt.Text("_label:N")
     )
     return (bars + labels).properties(height=280)
 
 
 def _donut_chart(data, x_col, y_col, x_title):
+    C = chart_colors()
     """Donut chart for total revenue share."""
     total = data[x_col].sum()
     data = data.copy()
@@ -121,7 +118,7 @@ def _donut_chart(data, x_col, y_col, x_title):
         theta=alt.Theta(f"{x_col}:Q", stack=True),
         color=alt.Color(
             f"{y_col}:N",
-            scale=alt.Scale(domain=CATEGORY_ORDER, range=CATEGORY_COLORS),
+            scale=alt.Scale(domain=CATEGORY_ORDER, range=[C["primary"], C["positive"], C["warn"], C["gray"]]),
             legend=alt.Legend(title=t("axis.category") if lang == "vi" else "Category", orient="bottom")
         ),
         tooltip=[
@@ -131,14 +128,16 @@ def _donut_chart(data, x_col, y_col, x_title):
         ]
     )
     
-    donut = base.mark_arc(innerRadius=42, outerRadius=70, stroke="#0E1223", strokeWidth=2)
-    text = base.mark_text(radius=88, size=11, color="#E2E8F0").encode(
+    donut = base.mark_arc(innerRadius=42, outerRadius=70)
+    text = base.mark_text(radius=88, size=11, color=C["text_label"]).encode(
         text=alt.Text("_pct_label:N")
     )
     return (donut + text).properties(height=280)
 
 
 def draw(start_date, end_date, hotel_id=None):
+    C = chart_colors()
+    cat_colors = [C["primary"], C["positive"], C["warn"], C["gray"]]
     df_actual = fetch_revenue_actual(start_date, end_date, hotel_id)
     bdf = fetch_revenue_breakdown(start_date, end_date, hotel_id)
 
@@ -187,7 +186,7 @@ def draw(start_date, end_date, hotel_id=None):
                         scale=alt.Scale(domainMax=y_max)),
                 color=alt.Color(
                     "revenue_category:N", title=t("axis.category"),
-                    scale=alt.Scale(domain=CATEGORY_ORDER, range=CATEGORY_COLORS),
+                    scale=alt.Scale(domain=CATEGORY_ORDER, range=cat_colors),
                     legend=None
                 ),
                 order=alt.Order("revenue_category:N", sort="ascending"),
@@ -200,7 +199,7 @@ def draw(start_date, end_date, hotel_id=None):
             ).properties(height=300)
 
             labels = alt.Chart(totals).mark_text(
-                align="center", baseline="bottom", dy=-4, fontSize=13, color="#E2E8F0"
+                align="center", baseline="bottom", dy=-4, fontSize=13, color=C["text_label"]
             ).encode(
                 x=x_enc_tot,
                 y=alt.Y("posted_amount:Q"),
@@ -218,7 +217,7 @@ def draw(start_date, end_date, hotel_id=None):
                         axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
                 color=alt.Color(
                     "revenue_category:N", title=t("axis.category"),
-                    scale=alt.Scale(domain=CATEGORY_ORDER, range=CATEGORY_COLORS),
+                    scale=alt.Scale(domain=CATEGORY_ORDER, range=cat_colors),
                     legend=None
                 ),
                 order=alt.Order("revenue_category:N", sort="ascending"),

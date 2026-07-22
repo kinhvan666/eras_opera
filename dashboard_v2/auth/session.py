@@ -150,14 +150,14 @@ def _render_login_page() -> None:
             st.markdown(f"""
             <div style="text-align:center;margin-bottom:24px">
                 <img src="data:image/png;base64,{logo_b64}" style="height:56px;width:auto">
-                <div style="font-size:24px;font-weight:700;background:linear-gradient(90deg,#FFFFFF 0%,#93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px;margin-top:12px">{t('app.title')}</div>
+                <div style="font-size:24px;font-weight:700;background:linear-gradient(90deg,var(--title-gradient-from) 0%,var(--title-gradient-to) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px;margin-top:12px">{t('app.title')}</div>
                 <div style="color:var(--text-secondary);font-size:14px;margin-top:-4px">{t('auth.subtitle')}</div>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
             <div style="text-align:center;margin-bottom:24px">
-                <div style="font-size:24px;font-weight:700;background:linear-gradient(90deg,#FFFFFF 0%,#93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px">{t('app.title')}</div>
+                <div style="font-size:24px;font-weight:700;background:linear-gradient(90deg,var(--title-gradient-from) 0%,var(--title-gradient-to) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px">{t('app.title')}</div>
             </div>
             """, unsafe_allow_html=True)
 

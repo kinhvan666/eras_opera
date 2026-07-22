@@ -1,0 +1,9 @@
+:root {
+  --bg-primary: #F8FAFC;  --bg-card: #FFFFFF;
+  --text-primary: #0F172A; --text-secondary: #475569;
+  --accent-blue: #2563EB;
+  --kpi-positive: #059669; --kpi-negative: #DC2626; --kpi-neutral: #64748B;
+  --badge-estimated-bg: #D97706; --badge-estimated-text: #FFFFFF;
+  --border: #E2E8F0;
+  --title-gradient-from: #0F172A; --title-gradient-to: #2563EB;
+}

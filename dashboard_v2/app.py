@@ -52,8 +52,49 @@ if st.query_params.get("page") == "admin" and is_admin():
     render_admin()
     st.stop()
 
-theme_css = Path(__file__).parent / "styles" / "theme.css"
-st.markdown(f"<style>{theme_css.read_text()}</style>", unsafe_allow_html=True)
+from ui.theme import current_theme
+
+def _apply_theme(mode: str):
+    # Set all Streamlit theme options for complete runtime theme flipping
+    if mode == "light":
+        st.config.set_option("theme.base", "light")
+        st.config.set_option("theme.primaryColor", "#2563EB")
+        st.config.set_option("theme.backgroundColor", "#F8FAFC")
+        st.config.set_option("theme.secondaryBackgroundColor", "#FFFFFF")
+        st.config.set_option("theme.textColor", "#0F172A")
+    else:
+        st.config.set_option("theme.base", "dark")
+        st.config.set_option("theme.primaryColor", "#3B82F6")
+        st.config.set_option("theme.backgroundColor", "#020617")
+        st.config.set_option("theme.secondaryBackgroundColor", "#0E1223")
+        st.config.set_option("theme.textColor", "#F8FAFC")
+
+if "ui_theme" not in st.session_state:
+    qp = st.query_params.get("theme")
+    if qp in ("light", "dark"):
+        st.session_state["ui_theme"] = qp
+    else:
+        try:
+            st.session_state["ui_theme"] = st.context.theme.type or "dark"
+        except Exception:
+            st.session_state["ui_theme"] = "dark"
+
+# Re-assert mỗi rerun (chống race đa user), tối đa 1 lần rerun sửa lệch mỗi phiên
+try:
+    _rendered = st.context.theme.type
+except Exception:
+    _rendered = None
+if _rendered and _rendered != st.session_state["ui_theme"] \
+        and not st.session_state.get("_theme_rerun_once"):
+    st.session_state["_theme_rerun_once"] = True
+    _apply_theme(st.session_state["ui_theme"])
+    st.rerun()
+st.session_state.pop("_theme_rerun_once", None)
+
+css = (Path(__file__).parent / "styles" / "theme.css").read_text()
+if st.session_state["ui_theme"] == "light":
+    css += (Path(__file__).parent / "styles" / "theme-light.css").read_text()
+st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 logo_path = Path(__file__).parent / "logo.png"
 logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
@@ -83,7 +124,7 @@ with col_logo:
     st.markdown(f'''
     <div style="display:flex;align-items:center;gap:12px;padding:4px 0;">
       <img src="data:image/png;base64,{logo_b64}" style="height:42px;width:auto;">
-      <span style="font-size:22px;font-weight:700;background:linear-gradient(90deg,#FFFFFF 0%,#93C5FD 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px;">{t("app.title")}</span>
+      <span style="font-size:22px;font-weight:700;background:linear-gradient(90deg,var(--title-gradient-from) 0%,var(--title-gradient-to) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px;">{t("app.title")}</span>
     </div>
     ''', unsafe_allow_html=True)
 
@@ -108,6 +149,13 @@ with col_user:
             st.rerun()
         if st.button("⎋", key="hdr_lo", type="secondary", help=t("auth.logout")):
             logout()
+        _icon = "☀️" if st.session_state["ui_theme"] == "dark" else "🌙"
+        if st.button(_icon, key="hdr_theme", type="secondary", help=t("header.theme_title")):
+            new = "light" if st.session_state["ui_theme"] == "dark" else "dark"
+            st.session_state["ui_theme"] = new
+            st.query_params["theme"] = new
+            _apply_theme(new)
+            st.rerun()
 
     st.markdown(f'''
     <div style="text-align:right;margin-top:4px;">
