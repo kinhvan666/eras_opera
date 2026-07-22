@@ -10,8 +10,8 @@ from ui.theme import chart_colors, current_theme
 
 # Vega-Lite expression: abbreviate VND values on axes
 VND_LABEL_EXPR = (
-    "datum.value >= 1e9 ? format(datum.value / 1e9, '.1f') + 'B' : "
-    "datum.value >= 1e6 ? format(datum.value / 1e6, '.0f') + 'M' : "
+    "datum.value >= 1e9 ? format(datum.value / 1e9, '.2f') + 'B' : "
+    "datum.value >= 1e6 ? format(datum.value / 1e6, '.2f') + 'M' : "
     "datum.value >= 1e3 ? format(datum.value / 1e3, '.0f') + 'K' : "
     "format(datum.value, ',.0f')"
 )
@@ -20,8 +20,8 @@ CATEGORY_ORDER  = ["Room", "FnB", "ServiceCharge", "Other"]
 
 
 def _fmt_label(v):
-    if v >= 1e9: return f"₫{v/1e9:.1f}B"
-    if v >= 1e6: return f"₫{v/1e6:.0f}M"
+    if v >= 1e9: return f"₫{v/1e9:.2f}B"
+    if v >= 1e6: return f"₫{v/1e6:.2f}M"
     if v >= 1e3: return f"₫{v/1e3:.0f}K"
     return f"₫{v:,.0f}"
 
@@ -176,7 +176,7 @@ def draw(start_date, end_date, hotel_id=None):
 
     # ── Row 1: Revenue trend & Overall composition ───────────────────────────
     if df_actual is not None and not df_actual.empty:
-        df_chart = df_actual[~df_actual["revenue_category"].isin(["Tax", "ServiceCharge"])].copy()
+        df_chart = df_actual[~df_actual["revenue_category"].isin(["Tax"])].copy()
         if by_month:
             df_chart["month"] = (
                 pd.to_datetime(df_chart["revenue_date"]).dt.to_period("M").astype(str)

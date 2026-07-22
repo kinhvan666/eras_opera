@@ -9,16 +9,16 @@ from ui.i18n import t
 from ui.theme import chart_colors
 
 VND_LABEL_EXPR = (
-    "datum.value >= 1e9 ? format(datum.value / 1e9, '.1f') + 'B' : "
-    "datum.value >= 1e6 ? format(datum.value / 1e6, '.0f') + 'M' : "
+    "datum.value >= 1e9 ? format(datum.value / 1e9, '.2f') + 'B' : "
+    "datum.value >= 1e6 ? format(datum.value / 1e6, '.2f') + 'M' : "
     "datum.value >= 1e3 ? format(datum.value / 1e3, '.0f') + 'K' : "
     "format(datum.value, ',.0f')"
 )
 
 
 def _fmt(v):
-    if v >= 1e9: return f"₫{v/1e9:.1f}B"
-    if v >= 1e6: return f"₫{v/1e6:.0f}M"
+    if v >= 1e9: return f"₫{v/1e9:.2f}B"
+    if v >= 1e6: return f"₫{v/1e6:.2f}M"
     if v >= 1e3: return f"₫{v/1e3:.0f}K"
     return f"₫{v:,.0f}"
 
