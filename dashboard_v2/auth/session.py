@@ -4,6 +4,7 @@
 
 from pathlib import Path
 import streamlit as st
+import streamlit.components.v1 as components
 
 from auth.db import (
     get_user_by_username,
@@ -18,6 +19,39 @@ from ui.i18n import t
 
 # Session key for the authenticated user dict
 _USER_KEY = "auth_user"
+COOKIE_NAME = "erasopera_session"
+
+# ---------------------------------------------------------------------------
+# Cookie Helpers (Native HTTP + JS First-Party Cookie)
+# ---------------------------------------------------------------------------
+
+def _set_cookie(token: str, max_age_seconds: int = 14400) -> None:
+    """Write first-party cookie directly to browser document.cookie."""
+    js = f"""
+    <script>
+        try {{
+            window.parent.document.cookie = "{COOKIE_NAME}={token}; path=/; max-age={max_age_seconds}; SameSite=Lax";
+        }} catch(e) {{
+            document.cookie = "{COOKIE_NAME}={token}; path=/; max-age={max_age_seconds}; SameSite=Lax";
+        }}
+    </script>
+    """
+    components.html(js, height=0, width=0)
+
+
+def _delete_cookie() -> None:
+    """Clear first-party cookie from browser."""
+    js = f"""
+    <script>
+        try {{
+            window.parent.document.cookie = "{COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax";
+        }} catch(e) {{
+            document.cookie = "{COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax";
+        }}
+    </script>
+    """
+    components.html(js, height=0, width=0)
+
 
 # ---------------------------------------------------------------------------
 # Public API
@@ -32,8 +66,19 @@ def is_logged_in() -> bool:
     if _USER_KEY in st.session_state and st.session_state[_USER_KEY] is not None:
         return True
 
-    # Check if a session_token exists in URL parameters (e.g. after F5 browser refresh)
-    token = st.query_params.get("session_token")
+    # 1. Check Native Streamlit 1.54 HTTP Cookie header (100% synchronous on F5 refresh!)
+    token = None
+    try:
+        token = st.context.cookies.get(COOKIE_NAME)
+    except Exception:
+        token = None
+
+    # 2. Check URL query parameters if link was opened directly
+    if not token:
+        token = st.query_params.get("session_token")
+        if token:
+            st.query_params.pop("session_token", None)
+
     if token:
         user = get_user_by_session_token(token)
         if user:
@@ -45,10 +90,12 @@ def is_logged_in() -> bool:
                 "is_admin":          user["is_admin"],
                 "allowed_hotel_ids": user["allowed_hotel_ids"],
             }
+            # Ensure cookie is kept alive for 4h
+            _set_cookie(token, max_age_seconds=14400)
             return True
         else:
-            # Token invalid/expired: clean URL query params
-            st.query_params.pop("session_token", None)
+            # Token invalid or expired in DB
+            _delete_cookie()
 
     return False
 
@@ -59,10 +106,18 @@ def is_admin() -> bool:
 
 
 def logout() -> None:
-    token = st.query_params.get("session_token")
+    token = None
+    try:
+        token = st.context.cookies.get(COOKIE_NAME)
+    except Exception:
+        pass
+    token = token or st.query_params.get("session_token")
+
     if token:
         delete_user_session(token)
-        st.query_params.pop("session_token", None)
+
+    _delete_cookie()
+    st.query_params.clear()
     st.session_state.pop(_USER_KEY, None)
     st.rerun()
 
@@ -121,7 +176,8 @@ def _attempt_login(username: str, password: str) -> str | None:
         "allowed_hotel_ids": user["allowed_hotel_ids"],
     }
     token = create_user_session(user["id"])
-    st.query_params["session_token"] = token
+    _set_cookie(token, max_age_seconds=14400)
+    st.query_params.clear()
     record_last_login(user["id"])
     return None
 

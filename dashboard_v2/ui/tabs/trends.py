@@ -18,12 +18,12 @@ VND_LABEL_EXPR = (
 
 def _fmt(v):
     if v >= 1e9: return f"{v/1e9:.2f}B"
-    if v >= 1e6: return f"{v/1e6:.0f}M"
+    if v >= 1e6: return f"{v/1e6:.1f}M"
     if v >= 1e3: return f"{v/1e3:.0f}K"
     return f"{v:,.0f}"
 
 
-def _monthly(df):
+def _monthly(df, start_date=None, end_date=None):
     """Aggregate daily df to monthly for all KPIs."""
     df2 = df.copy()
     df2["month"] = pd.to_datetime(df2["business_date"]).dt.to_period("M").astype(str)
@@ -32,9 +32,21 @@ def _monthly(df):
         room_nights=("room_nights", "sum"),
         occupancy=("occupancy", "mean"),
         cancellation_rate=("cancellation_rate", "mean"),
+        min_date=("business_date", "min"),
+        max_date=("business_date", "max"),
     )
     # Weighted ADR = total revenue / total room nights
     agg["adr"] = agg["total_revenue"] / agg["room_nights"].replace(0, float("nan"))
+
+    def check_partial(row):
+        m = pd.Period(row["month"])
+        first_day = str(m.start_time.date())
+        last_day = str(m.end_time.date())
+        s_date = str(start_date) if start_date else row["min_date"]
+        e_date = str(end_date) if end_date else row["max_date"]
+        return (s_date > first_day) or (e_date < last_day)
+
+    agg["is_partial"] = agg.apply(check_partial, axis=1)
     return agg.sort_values("month")
 
 
@@ -89,8 +101,19 @@ def draw(start_date, end_date, hotel_id=None):
                         horizontal=True, label_visibility="collapsed", key="trend_view") == t("rev.by_month")
 
     if by_month:
-        mdf = _monthly(df)
-        mdf["_adr_label"] = mdf["adr"].apply(lambda v: _fmt(v) if pd.notna(v) else "")
+        mdf = _monthly(df, start_date, end_date)
+        if mdf.get("is_partial", pd.Series([False])).any():
+            st.markdown(f'<div style="font-size:13px;color:var(--text-secondary);margin-top:-6px;margin-bottom:14px">📌 <b>Ghi chú:</b> {t("trend.partial_month_note")}</div>', unsafe_allow_html=True)
+        def make_kpi_label(row, kpi_val, is_pct=False):
+            if pd.isna(kpi_val): return ""
+            fmt = f"{kpi_val:.1%}" if is_pct else _fmt(kpi_val)
+            if row.get("is_partial"):
+                fmt += "*"
+            return fmt
+
+        mdf["_adr_label"] = mdf.apply(lambda r: make_kpi_label(r, r["adr"]), axis=1)
+        mdf["_occ_label"] = mdf.apply(lambda r: make_kpi_label(r, r["occupancy"], True), axis=1)
+        mdf["_cancel_label"] = mdf.apply(lambda r: make_kpi_label(r, r["cancellation_rate"], True), axis=1)
         x_field = alt.X("month:N", title=t("axis.month"), sort=list(mdf["month"]))
         x_tooltip = alt.Tooltip("month:N", title=t("axis.month"))
         src = mdf
@@ -98,13 +121,26 @@ def draw(start_date, end_date, hotel_id=None):
         # Revenue chart: monthly actual (fct_folio_line)
         if not df_rev_day.empty:
             df_rev_day["month"] = pd.to_datetime(df_rev_day["business_date"]).dt.to_period("M").astype(str)
-            rev_src = df_rev_day.groupby("month", as_index=False)["total_revenue"].sum()
+            rev_src = df_rev_day.groupby("month", as_index=False)["total_revenue"].sum().sort_values("month")
             rev_x = alt.X("month:N", title=t("axis.month"), sort=list(rev_src["month"]))
+            rev_src = pd.merge(rev_src, mdf[["month", "is_partial"]], on="month", how="left")
+            rev_src["is_partial"] = rev_src["is_partial"].fillna(False)
         else:
             rev_src = mdf
             rev_x = x_field
         rev_src = rev_src.copy()
-        rev_src["_rev_label"] = rev_src["total_revenue"].apply(_fmt)
+        rev_src["_mom"] = rev_src["total_revenue"].pct_change()
+        
+        def make_rev_label(row):
+            fmt = _fmt(row["total_revenue"])
+            if pd.notna(row["_mom"]):
+                pct = row["_mom"] * 100
+                fmt += f" ({'+' if pct > 0 else ''}{pct:.0f}%)"
+            if row.get("is_partial"):
+                fmt += "*"
+            return fmt
+            
+        rev_src["_rev_label"] = rev_src.apply(make_rev_label, axis=1)
     else:
         src = df
         x_field = alt.X("business_date:T", title=t("axis.date"))
@@ -122,15 +158,16 @@ def draw(start_date, end_date, hotel_id=None):
         c = chart_wrapper(title, height=350)
         with c:
             if by_month:
-                bars = alt.Chart(rev_src).mark_bar(color=C["primary"], opacity=0.8,
-                                                   cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
+                bars = alt.Chart(rev_src).mark_bar(color=C["primary"], cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
                     x=rev_x,
                     y=alt.Y("total_revenue:Q", title=t("axis.revenue"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+                    opacity=alt.condition("datum.is_partial", alt.value(0.45), alt.value(0.8)),
                     tooltip=[x_tooltip, alt.Tooltip("total_revenue:Q", format=",.0f", title=t("axis.revenue"))],
                 ).properties(height=280)
                 if "_rev_label" in rev_src.columns:
                     labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=12, color=C["text_label"]).encode(
-                        text=alt.Text("_rev_label:N")
+                        text=alt.Text("_rev_label:N"),
+                        opacity=alt.value(1.0)
                     )
                     bars = bars + labels
                 st.altair_chart(bars, use_container_width=True)
@@ -166,7 +203,7 @@ def draw(start_date, end_date, hotel_id=None):
                     (base.mark_line(color=C["primary"], strokeWidth=2)
                      + base.mark_point(color=C["primary"], size=60, filled=True)
                      + base.mark_text(dy=-12, fontSize=12, color=C["text_label"]).encode(
-                          text=alt.Text("occupancy:Q", format=".1%")
+                          text=alt.Text("_occ_label:N")
                       )).properties(height=280),
                     use_container_width=True,
                 )
@@ -249,7 +286,7 @@ def draw(start_date, end_date, hotel_id=None):
                     (base.mark_line(color=C["warn"], strokeWidth=2)
                      + base.mark_point(color=C["warn"], size=60, filled=True)
                      + base.mark_text(dy=-12, fontSize=12, color=C["text_label"]).encode(
-                          text=alt.Text("cancellation_rate:Q", format=".1%")
+                          text=alt.Text("_cancel_label:N")
                       )).properties(height=280),
                     use_container_width=True,
                 )
@@ -267,3 +304,5 @@ def draw(start_date, end_date, hotel_id=None):
                     ).properties(height=280),
                     use_container_width=True,
                 )
+
+

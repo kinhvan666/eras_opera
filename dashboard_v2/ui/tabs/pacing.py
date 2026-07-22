@@ -4,7 +4,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from data.repository import fetch_kpi_pacing, fetch_kpi_pickup
+from data.repository import fetch_kpi_pacing, fetch_kpi_pickup, fetch_pickup_daily
 from ui.components import chart_wrapper
 from ui.i18n import t
 
@@ -71,18 +71,33 @@ def draw(start_date, end_date, hotel_id=None):
                              alt.Tooltip("current_occupancy:Q", format=".1%", title=t("pacing.otb_occupancy"))],
                 ).properties(height=300)
                 st.altair_chart(area, use_container_width=True)
-                st.caption(t("msg.prior_year_na"))
 
     with col2:
-        c = chart_wrapper(t("chart.pace_vs_prior"), height=400)
+        pace_cols = ["occupancy_pace_pct", "adr_pace_pct", "revpar_pace_pct", "revenue_pace_pct"]
+        has_prior = not pace_df.empty and pace_df[pace_cols].notna().any().any()
+        wrapper_title = t("chart.pace_vs_prior") if pace_df.empty or has_prior else t("chart.pickup_daily")
+        c = chart_wrapper(wrapper_title, height=400)
         with c:
             if pace_df.empty:
                 st.info(t("msg.not_enough_forward"))
             else:
-                pace_cols = ["occupancy_pace_pct", "adr_pace_pct", "revpar_pace_pct", "revenue_pace_pct"]
-                has_prior = pace_df[pace_cols].notna().any().any()
                 if not has_prior:
-                    st.info(t("msg.prior_year_na_long"))
+                    pickup_d = fetch_pickup_daily(hotel_id, 30)
+                    if pickup_d.empty:
+                        st.info(t("msg.prior_year_na_long"))
+                    else:
+                        st.altair_chart(
+                            alt.Chart(pickup_d).mark_bar(color=C["primary"], cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
+                                x=alt.X("booking_date:T", title=t("axis.date")),
+                                y=alt.Y("room_nights:Q", title=t("pacing.rooms")),
+                                tooltip=[
+                                    alt.Tooltip("booking_date:T", title=t("axis.date")),
+                                    alt.Tooltip("room_nights:Q", title=t("pacing.rooms")),
+                                    alt.Tooltip("est_revenue:Q", title=t("pacing.pickup_revenue"), format=",.0f")
+                                ]
+                            ).properties(height=320),
+                            use_container_width=True
+                        )
                 else:
                     metric_defs = [
                         ("occupancy", "occupancy_pace_pct", t("pacing.metric_occupancy")),
@@ -117,33 +132,59 @@ def draw(start_date, end_date, hotel_id=None):
         if pickup_df.empty:
             st.info(t("msg.no_future_res"))
         else:
+            w = pickup_df.set_index("window_days")
+            def safe_get(idx, col):
+                return w.loc[idx, col] if idx in w.index else 0
+                
+            buckets = pd.DataFrame({
+                "bucket": [t("pacing.bucket_0_7"), t("pacing.bucket_8_30"), t("pacing.bucket_31_90")],
+                "room_nights": [
+                    safe_get(7, "pickup_rooms"),
+                    safe_get(30, "pickup_rooms") - safe_get(7, "pickup_rooms"),
+                    safe_get(90, "pickup_rooms") - safe_get(30, "pickup_rooms")
+                ],
+                "est_revenue": [
+                    safe_get(7, "pickup_revenue"),
+                    safe_get(30, "pickup_revenue") - safe_get(7, "pickup_revenue"),
+                    safe_get(90, "pickup_revenue") - safe_get(30, "pickup_revenue")
+                ],
+            })
+            
+            table_df = buckets.copy()
+            table_df.loc[len(table_df)] = [t("pacing.total"), safe_get(90, "pickup_rooms"), safe_get(90, "pickup_revenue")]
+            
             col_window = t("pacing.window_days")
             col_rooms = t("pacing.rooms")
             col_revenue = t("pacing.pickup_revenue")
-            pickup_renamed = pickup_df.rename(columns={
-                "window_days": col_window,
-                "pickup_rooms": col_rooms,
-                "pickup_revenue": col_revenue,
+            
+            table_renamed = table_df.rename(columns={
+                "bucket": col_window,
+                "room_nights": col_rooms,
+                "est_revenue": col_revenue,
             })
+            
             col_chart, col_table = st.columns([3, 2])
             with col_chart:
                 st.altair_chart(
-                    alt.Chart(pickup_renamed).mark_bar(
+                    alt.Chart(buckets).mark_bar(
                         color=C["primary"], cornerRadiusTopLeft=3, cornerRadiusTopRight=3
                     ).encode(
-                        x=alt.X(f"{col_window}:O", title=t("pacing.window_days")),
-                        y=alt.Y(f"{col_rooms}:Q", title=t("pacing.room_nights_axis")),
-                        tooltip=[col_window, col_rooms,
-                                 alt.Tooltip(f"{col_revenue}:Q", format=",.0f")],
+                        x=alt.X("bucket:N", title=t("pacing.window_days"), sort=None),
+                        y=alt.Y("room_nights:Q", title=t("pacing.room_nights_axis")),
+                        tooltip=[
+                            alt.Tooltip("bucket:N", title=t("pacing.window_days")), 
+                            alt.Tooltip("room_nights:Q", title=t("pacing.rooms")),
+                            alt.Tooltip("est_revenue:Q", title=t("pacing.pickup_revenue"), format=",.0f")
+                        ],
                     ).properties(height=220),
                     use_container_width=True,
                 )
             with col_table:
-                pickup_renamed[col_revenue] = pickup_renamed[col_revenue].apply(
+                table_renamed[col_revenue] = table_renamed[col_revenue].apply(
                     lambda v: f"₫{v/1_000_000:.1f}M" if v >= 1_000_000 else f"₫{v:,.0f}"
                 )
                 st.dataframe(
-                    pickup_renamed, use_container_width=True, hide_index=True,
+                    table_renamed, use_container_width=True, hide_index=True,
                     column_config={
                         col_window: st.column_config.TextColumn(width="small"),
                         col_rooms: st.column_config.NumberColumn(format="%d"),

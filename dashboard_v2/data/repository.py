@@ -284,6 +284,21 @@ def fetch_kpi_pacing(start_date, end_date, hotel_id=None):
 
 
 @st.cache_data(ttl=CACHE_TTL_SECONDS)
+def fetch_pickup_daily(hotel_id=None, days=30):
+    """Số đêm đặt MỚI theo ngày đặt (booking_date) trong N ngày qua — gồm cả booking đã hủy sau đó thì loại."""
+    sql = """
+        select booking_date, count(*) as room_nights, sum(night_amount) as est_revenue
+        from analytics.fct_reservation_night
+        where booking_date >= current_date - %(days)s::int
+          and reservation_status not in ('Cancelled', 'NoShow')
+          and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
+        group by booking_date
+        order by booking_date
+    """
+    with psycopg2.connect(DATABASE_URL) as conn:
+        return pd.read_sql(sql, conn, params={"hotel_id": hotel_id, "days": days})
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
 def fetch_kpi_pickup(hotel_id=None):
     with psycopg2.connect(DATABASE_URL) as conn:
         return pd.read_sql(

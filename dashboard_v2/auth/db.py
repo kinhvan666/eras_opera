@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS auth.user_sessions (
     token       TEXT PRIMARY KEY,
     user_id     INTEGER NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    expires_at  TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days')
+    expires_at  TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '4 hours')
 );
 """
 
@@ -253,4 +253,20 @@ def delete_user_session(token: str) -> None:
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, (token,))
+        conn.commit()
+
+
+def cleanup_expired_sessions() -> None:
+    sql = "DELETE FROM auth.user_sessions WHERE expires_at < NOW()"
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql)
+        conn.commit()
+
+
+def revoke_all_user_sessions(user_id: int) -> None:
+    sql = "DELETE FROM auth.user_sessions WHERE user_id = %s"
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, (user_id,))
         conn.commit()
