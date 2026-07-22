@@ -41,6 +41,29 @@ def _monthly(df):
     return agg.sort_values("month")
 
 
+def _with_ma7(df, col):
+    """Thêm cột {col}_ma7 = trung bình trượt 7 ngày (min_periods=1)."""
+    out = df.sort_values("business_date").copy()
+    out[f"{col}_ma7"] = out[col].rolling(7, min_periods=1).mean()
+    return out
+
+
+def _weekend_bands(df):
+    """DataFrame các ngày T7/CN để vẽ dải mờ: cột band_start, band_end (ngày +1)."""
+    d = pd.to_datetime(df["business_date"])
+    wk = df.loc[d.dt.dayofweek >= 5, ["business_date"]].copy()
+    wk["band_start"] = pd.to_datetime(wk["business_date"])
+    wk["band_end"] = wk["band_start"] + pd.Timedelta(days=1)
+    return wk
+
+
+def _weekly_cancel(df):
+    """Gộp cancellation_rate theo tuần (nhãn = thứ Hai đầu tuần), mean."""
+    d = df.copy()
+    d["week"] = pd.to_datetime(d["business_date"]).dt.to_period("W-SUN").dt.start_time
+    return d.groupby("week", as_index=False)["cancellation_rate"].mean()
+
+
 def draw(start_date, end_date, hotel_id=None):
     df = fetch_kpi_daily(start_date, end_date, hotel_id)
     if df.empty:
@@ -100,18 +123,36 @@ def draw(start_date, end_date, hotel_id=None):
         title = t("chart.revenue_by_month") if by_month else t("chart.revenue_by_day")
         c = chart_wrapper(title, height=350)
         with c:
-            bars = alt.Chart(rev_src).mark_bar(color=BLUE, opacity=0.8,
-                                               cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
-                x=rev_x,
-                y=alt.Y("total_revenue:Q", title=t("axis.revenue"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
-                tooltip=[x_tooltip, alt.Tooltip("total_revenue:Q", format=",.0f", title=t("axis.revenue"))],
-            ).properties(height=280)
-            if by_month and "_rev_label" in rev_src.columns:
-                labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=12, color="#E2E8F0").encode(
-                    text=alt.Text("_rev_label:N")
+            if by_month:
+                bars = alt.Chart(rev_src).mark_bar(color=BLUE, opacity=0.8,
+                                                   cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
+                    x=rev_x,
+                    y=alt.Y("total_revenue:Q", title=t("axis.revenue"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+                    tooltip=[x_tooltip, alt.Tooltip("total_revenue:Q", format=",.0f", title=t("axis.revenue"))],
+                ).properties(height=280)
+                if "_rev_label" in rev_src.columns:
+                    labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=12, color="#E2E8F0").encode(
+                        text=alt.Text("_rev_label:N")
+                    )
+                    bars = bars + labels
+                st.altair_chart(bars, use_container_width=True)
+            else:
+                r_src = _with_ma7(rev_src, "total_revenue")
+                wk = _weekend_bands(r_src)
+                bands = alt.Chart(wk).mark_rect(color="#334155", opacity=0.18).encode(
+                    x="band_start:T", x2="band_end:T"
                 )
-                bars = bars + labels
-            st.altair_chart(bars, use_container_width=True)
+                line = alt.Chart(r_src).mark_line(color=BLUE, strokeWidth=1.5, opacity=0.35).encode(
+                    x=rev_x,
+                    y=alt.Y("total_revenue:Q", title=t("axis.revenue"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+                    tooltip=[x_tooltip, alt.Tooltip("total_revenue:Q", format=",.0f", title=t("axis.revenue"))],
+                )
+                ma7 = alt.Chart(r_src).mark_line(color=BLUE, strokeWidth=2.5, opacity=1.0).encode(
+                    x=rev_x,
+                    y=alt.Y("total_revenue_ma7:Q", title=t("axis.revenue")),
+                    tooltip=[x_tooltip, alt.Tooltip("total_revenue_ma7:Q", format=",.0f", title=t("trend.ma7"))],
+                )
+                st.altair_chart((bands + line + ma7).properties(height=280), use_container_width=True)
 
     with col2:
         title = t("chart.occupancy_by_month") if by_month else t("chart.occupancy_by_day")
@@ -132,16 +173,27 @@ def draw(start_date, end_date, hotel_id=None):
                     use_container_width=True,
                 )
             else:
-                area = alt.Chart(src).mark_area(opacity=0.2, color=BLUE).encode(
+                o_src = _with_ma7(src, "occupancy")
+                wk = _weekend_bands(o_src)
+                bands = alt.Chart(wk).mark_rect(color="#334155", opacity=0.18).encode(
+                    x="band_start:T", x2="band_end:T"
+                )
+                area = alt.Chart(o_src).mark_area(opacity=0.15, color=BLUE).encode(
                     x=x_field,
                     y=alt.Y("occupancy:Q", title=t("axis.occupancy"), axis=alt.Axis(format="%")),
                 )
-                line = alt.Chart(src).mark_line(color=BLUE, strokeWidth=2).encode(
+                line = alt.Chart(o_src).mark_line(color=BLUE, strokeWidth=1.5, opacity=0.35).encode(
                     x="business_date:T",
                     y="occupancy:Q",
                     tooltip=[x_tooltip, alt.Tooltip("occupancy:Q", format=".1%", title=t("axis.occupancy"))],
                 )
-                st.altair_chart((area + line).properties(height=280), use_container_width=True)
+                ma7 = alt.Chart(o_src).mark_line(color=BLUE, strokeWidth=2.5, opacity=1.0).encode(
+                    x="business_date:T",
+                    y="occupancy_ma7:Q",
+                    tooltip=[x_tooltip, alt.Tooltip("occupancy_ma7:Q", format=".1%", title=t("trend.ma7"))],
+                )
+                st.altair_chart((bands + area + line + ma7).properties(height=280), use_container_width=True)
+                st.caption(t("trend.weekend_note") + " · " + t("trend.ma7") + " = đường đậm")
 
     st.divider()
     col3, col4 = st.columns(2)
@@ -165,18 +217,27 @@ def draw(start_date, end_date, hotel_id=None):
                     use_container_width=True,
                 )
             else:
-                st.altair_chart(
-                    alt.Chart(src).mark_bar(color=BLUE, opacity=0.8,
-                                             cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
-                        x=x_field,
-                        y=alt.Y("adr:Q", title=t("axis.adr"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
-                        tooltip=[x_tooltip, alt.Tooltip("adr:Q", format=",.0f", title=t("axis.adr"))],
-                    ).properties(height=280),
-                    use_container_width=True,
+                a_src = src.copy()
+                a_src["adr"] = a_src["adr"].replace(0, float("nan"))
+                a_src = _with_ma7(a_src, "adr")
+                wk = _weekend_bands(a_src)
+                bands = alt.Chart(wk).mark_rect(color="#334155", opacity=0.18).encode(
+                    x="band_start:T", x2="band_end:T"
                 )
+                line = alt.Chart(a_src).mark_line(color=BLUE, strokeWidth=1.5, opacity=0.35).encode(
+                    x=x_field,
+                    y=alt.Y("adr:Q", title=t("axis.adr"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+                    tooltip=[x_tooltip, alt.Tooltip("adr:Q", format=",.0f", title=t("axis.adr"))],
+                )
+                ma7 = alt.Chart(a_src).mark_line(color=BLUE, strokeWidth=2.5, opacity=1.0).encode(
+                    x=x_field,
+                    y=alt.Y("adr_ma7:Q", title=t("axis.adr")),
+                    tooltip=[x_tooltip, alt.Tooltip("adr_ma7:Q", format=",.0f", title=t("trend.ma7"))],
+                )
+                st.altair_chart((bands + line + ma7).properties(height=280), use_container_width=True)
 
     with col4:
-        title = t("chart.cancel_by_month") if by_month else t("chart.cancel_by_day")
+        title = t("chart.cancel_by_month") if by_month else t("chart.cancel_by_week")
         c = chart_wrapper(title, height=350)
         with c:
             if by_month:
@@ -195,13 +256,16 @@ def draw(start_date, end_date, hotel_id=None):
                     use_container_width=True,
                 )
             else:
+                c_src = _weekly_cancel(src)
+                # Trục thời gian liên tục → cột mặc định rất mảnh; đặt bề rộng theo số tuần
+                bar_size = max(8, min(40, int(600 / max(len(c_src), 1) * 0.6)))
                 st.altair_chart(
-                    alt.Chart(src).mark_bar(color=AMBER, opacity=0.75,
+                    alt.Chart(c_src).mark_bar(color=AMBER, opacity=0.75, size=bar_size,
                                              cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
-                        x=x_field,
+                        x=alt.X("week:T", title=t("axis.date")),
                         y=alt.Y("cancellation_rate:Q", title=t("axis.cancel"),
                                 axis=alt.Axis(format="%")),
-                        tooltip=[x_tooltip, alt.Tooltip("cancellation_rate:Q", format=".1%", title=t("axis.cancel"))],
+                        tooltip=[alt.Tooltip("week:T", title=t("axis.date")), alt.Tooltip("cancellation_rate:Q", format=".1%", title=t("axis.cancel"))],
                     ).properties(height=280),
                     use_container_width=True,
                 )
