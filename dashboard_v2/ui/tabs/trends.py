@@ -103,7 +103,7 @@ def draw(start_date, end_date, hotel_id=None):
     if by_month:
         mdf = _monthly(df, start_date, end_date)
         if mdf.get("is_partial", pd.Series([False])).any():
-            st.markdown(f'<div style="font-size:13px;color:var(--text-secondary);margin-top:-6px;margin-bottom:14px">📌 <b>Ghi chú:</b> {t("trend.partial_month_note")}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="font-size:13px;color:var(--text-secondary);margin-top:-6px;margin-bottom:14px"><b>Ghi chú:</b> {t("trend.partial_month_note")}</div>', unsafe_allow_html=True)
         def make_kpi_label(row, kpi_val, is_pct=False):
             if pd.isna(kpi_val): return ""
             fmt = f"{kpi_val:.1%}" if is_pct else _fmt(kpi_val)
