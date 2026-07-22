@@ -7,3 +7,21 @@
   --border: #E2E8F0;
   --title-gradient-from: #0F172A; --title-gradient-to: #2563EB;
 }
+
+/* Light Theme Card Shadows & Hover states */
+.kpi-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04) !important;
+}
+
+.kpi-card:hover {
+  border-color: #3B82F6 !important;
+  box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Container border & shadow overrides for Streamlit containers in light mode */
+[data-testid="stVerticalBlockBorderWrapper"] {
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04) !important;
+}

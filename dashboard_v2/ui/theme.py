@@ -7,7 +7,7 @@ _DARK = {
 }
 _LIGHT = {
     "primary": "#2563EB", "accent": "#3B82F6", "warn": "#D97706",
-    "gray": "#94A3B8", "text_label": "#334155", "band": "#CBD5E1",
+    "gray": "#64748B", "text_label": "#1E293B", "band": "#F1F5F9",
     "positive": "#059669", "negative": "#DC2626",
 }
 
