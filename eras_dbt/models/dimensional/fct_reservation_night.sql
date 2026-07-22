@@ -16,9 +16,8 @@ with reservation_nights as (
         s.departure_date,
         s.created_at::date as booking_date,
         s.reservation_status,
-        gs.date_day as business_date,
-        -- Calculate night count for per-night revenue allocation
-        (s.departure_date - s.arrival_date)::int as night_count
+        gs.date_day as business_date
+        -- Night count removed, total_amount is already per-night
     from {{ ref('stg_reservations') }} s
     cross join lateral generate_series(
         s.arrival_date,
@@ -41,7 +40,9 @@ select
     market_code,
     source_of_business,
     room_type,
-    (total_amount::numeric / night_count) as night_amount,
+    -- total_amount = roomStay.rateAmount = giá MỖI ĐÊM (per-night, xác nhận bằng đối chiếu
+    -- folio 22-07-26) → night_amount chính là rateAmount, KHÔNG chia cho night_count.
+    total_amount::numeric as night_amount,
     arrival_date,
     booking_date,
     reservation_status

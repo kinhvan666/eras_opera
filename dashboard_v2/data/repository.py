@@ -221,10 +221,14 @@ ROOM_REVENUE_SQL = """
 """
 
 ROOM_NIGHTS_SQL = """
+    -- Mẫu số ADR: loại đêm 0đ (comp/house-use) theo chuẩn STR/USALI —
+    -- đồng bộ với ADR ước tính trong kpi_daily_snapshot (đã loại sẵn).
+    -- Thẻ KPI "Đêm lưu trú" KHÔNG dùng SQL này (lấy từ kpi_daily_snapshot) nên không đổi.
     SELECT COUNT(*) AS room_nights
     FROM analytics.fct_reservation_night
     WHERE business_date BETWEEN %(start_date)s AND %(end_date)s
       AND reservation_status NOT IN ('Cancelled', 'NoShow')
+      AND night_amount > 0
       AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
 """
 

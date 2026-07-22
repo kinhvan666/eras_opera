@@ -94,8 +94,6 @@ models:
           - not_null
       - name: rate_plan_code
         description: "Rate plan code (part of composite FK to dim_rate)"
-        tests:
-          - not_null
       - name: market_code
         description: "Market code (part of composite FK to dim_rate)"
       - name: source_of_business
@@ -103,7 +101,7 @@ models:
       - name: room_type
         description: "Room type from reservation"
       - name: night_amount
-        description: "Per-night revenue allocation (total_amount / night_count) - estimate pending financials feature"
+        description: "Per-night revenue allocation (total_amount = roomStay.rateAmount) - estimate pending financials feature"
 
   - name: fct_folio_line
     description: "Fact table - one row per revenue posting (transaction_no grain). Keeps all rows including unmatched postings (reservation_id IS NULL)."

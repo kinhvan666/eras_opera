@@ -6,8 +6,9 @@ eras_dbt:
       host: localhost
       user: user
       # Do not store password here.
-      # Configure your password in the git-ignored .user.yml file.
-      # password: your_password
+      # Configure your password in the git-ignored .user.yml file,
+      # or pass it at runtime: DBT_ENV_SECRET_PASSWORD=... dbt build --profiles-dir .
+      password: "{{ env_var('DBT_ENV_SECRET_PASSWORD', '') }}"
       port: 5434
       dbname: erg_opera_data
       schema: analytics

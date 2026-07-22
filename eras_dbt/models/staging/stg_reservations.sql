@@ -20,8 +20,10 @@ staged as (
     select
         raw_data->'reservationIdList'->0->>'id'                          as reservation_id,
         raw_data->'externalReferences'->0->>'id'                         as confirmation_no,
-        (raw_data->'roomStay'->'originalTimeSpan'->>'startDate')::date   as arrival_date,
-        (raw_data->'roomStay'->'originalTimeSpan'->>'endDate')::date     as departure_date,
+        -- Ngày ở THỰC TẾ (roomStay.arrivalDate/departureDate) — KHÔNG dùng originalTimeSpan
+        -- vì OHIP spec: originalTimeSpan giữ nguyên khi kỳ ở bị đổi (đổi lịch/về sớm/no-show cuộn)
+        (raw_data->'roomStay'->>'arrivalDate')::date                     as arrival_date,
+        (raw_data->'roomStay'->>'departureDate')::date                   as departure_date,
         (raw_data->>'createDateTime')::timestamp                         as created_at,
         (raw_data->>'lastModifyDateTime')::timestamp                     as updated_at,
         raw_data->'reservationGuest'->>'id'                              as profile_id,

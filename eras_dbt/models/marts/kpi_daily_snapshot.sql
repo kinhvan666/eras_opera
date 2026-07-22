@@ -55,7 +55,7 @@ select
     o.reservations,
     o.room_nights,
     o.total_revenue,
-    o.adr,
+    coalesce(o.adr, 0) as adr,
     o.occupancy,
     o.revpar,
     o.avg_lead_time,
