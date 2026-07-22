@@ -176,7 +176,7 @@ def draw(start_date, end_date, hotel_id=None):
 
     # ── Row 1: Revenue trend & Overall composition ───────────────────────────
     if df_actual is not None and not df_actual.empty:
-        df_chart = df_actual[df_actual["revenue_category"] != "Tax"].copy()
+        df_chart = df_actual[~df_actual["revenue_category"].isin(["Tax", "ServiceCharge"])].copy()
         if by_month:
             df_chart["month"] = (
                 pd.to_datetime(df_chart["revenue_date"]).dt.to_period("M").astype(str)

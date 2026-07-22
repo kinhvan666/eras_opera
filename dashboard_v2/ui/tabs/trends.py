@@ -86,7 +86,7 @@ def draw(start_date, end_date, hotel_id=None):
     # Actual revenue from fct_folio_line (excl Tax) — same source as Revenue KPI tile
     df_actual = fetch_revenue_actual(start_date, end_date, hotel_id)
     if df_actual is not None and not df_actual.empty:
-        df_rev_day = (df_actual[df_actual["revenue_category"] != "Tax"]
+        df_rev_day = (df_actual[df_actual["revenue_category"] == "Room"]
                       .groupby("revenue_date", as_index=False)["posted_amount"]
                       .sum()
                       .rename(columns={"posted_amount": "total_revenue",
@@ -156,7 +156,7 @@ def draw(start_date, end_date, hotel_id=None):
     col1, col2 = st.columns(2)
 
     with col1:
-        title = t("chart.revenue_by_month") if by_month else t("chart.revenue_by_day")
+        title = t("chart.room_revenue_by_month") if by_month else t("chart.room_revenue_by_day")
         c = chart_wrapper(title, height=350)
         with c:
             if by_month:

@@ -201,66 +201,69 @@ def _render_login_page() -> None:
     if ui_theme == "light" and (theme_dir / "theme-light.css").exists():
         css += (theme_dir / "theme-light.css").read_text()
 
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
-    import base64
-    logo_b64 = ""
-    if logo_path.exists():
-        logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
-
-    # Center form using columns
-    st.markdown('<div style="margin-top:40px"></div>', unsafe_allow_html=True)
-    _, col_form, _ = st.columns([3, 2, 3])
-    with col_form:
-        if logo_b64:
+    main_placeholder = st.empty()
+    with main_placeholder.container():
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    
+        import base64
+        logo_b64 = ""
+        if logo_path.exists():
+            logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
+    
+        # Center form using columns
+        st.markdown('<div style="margin-top:40px"></div>', unsafe_allow_html=True)
+        _, col_form, _ = st.columns([3, 2, 3])
+        with col_form:
+            if logo_b64:
+                st.markdown(f"""
+                <div style="text-align:center;margin-bottom:24px">
+                    <img src="data:image/png;base64,{logo_b64}" style="height:56px;width:auto">
+                    <div style="font-size:24px;font-weight:700;background:linear-gradient(90deg,var(--title-gradient-from) 0%,var(--title-gradient-to) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px;margin-top:12px">{t('app.title')}</div>
+                    <div style="color:var(--text-secondary);font-size:14px;margin-top:-4px">{t('auth.subtitle')}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="text-align:center;margin-bottom:24px">
+                    <div style="font-size:24px;font-weight:700;background:linear-gradient(90deg,var(--title-gradient-from) 0%,var(--title-gradient-to) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px">{t('app.title')}</div>
+                </div>
+                """, unsafe_allow_html=True)
+    
+            if "login_error" not in st.session_state:
+                st.session_state["login_error"] = ""
+    
+            with st.form("login_form", clear_on_submit=False):
+                username = st.text_input(
+                    t("auth.username_label"),
+                    placeholder=t("auth.username_placeholder"),
+                    autocomplete="username",
+                )
+                password = st.text_input(
+                    t("auth.password_label"),
+                    type="password",
+                    placeholder=t("auth.password_placeholder"),
+                    autocomplete="current-password",
+                )
+                submitted = st.form_submit_button(
+                    t("auth.login_btn"),
+                    use_container_width=True,
+                    type="primary",
+                )
+    
+                if submitted:
+                    err = _attempt_login(username, password)
+                    if err:
+                        st.session_state["login_error"] = err
+                    else:
+                        st.session_state["login_error"] = ""
+                        main_placeholder.empty()
+                        st.rerun()
+    
+            if st.session_state.get("login_error"):
+                st.error(st.session_state["login_error"], icon="🔒")
+    
             st.markdown(f"""
-            <div style="text-align:center;margin-bottom:24px">
-                <img src="data:image/png;base64,{logo_b64}" style="height:56px;width:auto">
-                <div style="font-size:24px;font-weight:700;background:linear-gradient(90deg,var(--title-gradient-from) 0%,var(--title-gradient-to) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px;margin-top:12px">{t('app.title')}</div>
-                <div style="color:var(--text-secondary);font-size:14px;margin-top:-4px">{t('auth.subtitle')}</div>
+            <div style="text-align:center;margin-top:24px;color:var(--text-secondary);font-size:12px">
+                {t('auth.contact_admin')}
             </div>
             """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div style="text-align:center;margin-bottom:24px">
-                <div style="font-size:24px;font-weight:700;background:linear-gradient(90deg,var(--title-gradient-from) 0%,var(--title-gradient-to) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px">{t('app.title')}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        if "login_error" not in st.session_state:
-            st.session_state["login_error"] = ""
-
-        with st.form("login_form", clear_on_submit=False):
-            username = st.text_input(
-                t("auth.username_label"),
-                placeholder=t("auth.username_placeholder"),
-                autocomplete="username",
-            )
-            password = st.text_input(
-                t("auth.password_label"),
-                type="password",
-                placeholder=t("auth.password_placeholder"),
-                autocomplete="current-password",
-            )
-            submitted = st.form_submit_button(
-                t("auth.login_btn"),
-                use_container_width=True,
-                type="primary",
-            )
-
-            if submitted:
-                err = _attempt_login(username, password)
-                if err:
-                    st.session_state["login_error"] = err
-                else:
-                    st.session_state["login_error"] = ""
-                    st.rerun()
-
-        if st.session_state.get("login_error"):
-            st.error(st.session_state["login_error"], icon="🔒")
-
-        st.markdown(f"""
-        <div style="text-align:center;margin-top:24px;color:var(--text-secondary);font-size:12px">
-            {t('auth.contact_admin')}
-        </div>
-        """, unsafe_allow_html=True)

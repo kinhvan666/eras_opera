@@ -90,7 +90,7 @@ REVENUE_BREAKDOWN_SQL = """
         from analytics.fct_folio_line
         where revenue_date between %(start_date)s and %(end_date)s
           and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
-          and revenue_category != 'Tax'
+          and revenue_category not in ('Tax', 'ServiceCharge')
         group by reservation_id
     ),
     res_attrs as (
@@ -190,7 +190,7 @@ REVENUE_ACTUAL_KPI_SQL = """
     FROM analytics.fct_folio_line
     WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
       AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
-      AND revenue_category != 'Tax'
+      AND revenue_category NOT IN ('Tax', 'ServiceCharge')
 """
 
 

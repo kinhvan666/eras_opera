@@ -23,7 +23,7 @@ with operational as (
         -- actual paid rate, not average diluted by free stays.
         sum(f.night_amount) filter (where f.night_amount > 0)
             / nullif(count(*) filter (where f.night_amount > 0), 0)                as adr,
-        count(*)::numeric / nullif(p.room_count * 1.0, 0)                          as occupancy,
+        count(*) filter (where f.night_amount > 0)::numeric / nullif(p.room_count * 1.0, 0)                          as occupancy,
         sum(f.night_amount) / nullif(p.room_count * 1.0, 0)                        as revpar,
         avg((f.arrival_date - f.booking_date))                                      as avg_lead_time
     from {{ ref('fct_reservation_night') }} f
@@ -41,8 +41,8 @@ cancellation as (
         f.business_date,
         f.hotel_id,
         count(distinct f.reservation_id)                                                as total_reservations,
-        count(distinct f.reservation_id) filter (where f.reservation_status = 'Cancelled') as cancelled_reservations,
-        count(distinct f.reservation_id) filter (where f.reservation_status = 'Cancelled')::numeric
+        count(distinct f.reservation_id) filter (where f.reservation_status in ('Cancelled', 'NoShow')) as cancelled_reservations,
+        count(distinct f.reservation_id) filter (where f.reservation_status in ('Cancelled', 'NoShow'))::numeric
             / nullif(count(distinct f.reservation_id), 0)                              as cancellation_rate
     from {{ ref('fct_reservation_night') }} f
     group by 1, 2
