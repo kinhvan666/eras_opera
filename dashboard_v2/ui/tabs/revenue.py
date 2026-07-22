@@ -6,7 +6,7 @@ from data.repository import fetch_revenue_actual, fetch_revenue_breakdown
 from ui.components import chart_wrapper
 from ui.i18n import t, t_code
 
-from ui.theme import chart_colors
+from ui.theme import chart_colors, current_theme
 
 # Vega-Lite expression: abbreviate VND values on axes
 VND_LABEL_EXPR = (
@@ -46,8 +46,8 @@ def _gradient_hbar(data, x_col, y_col, x_title, y_title, top_n=8):
     bars = alt.Chart(data).mark_bar(
         cornerRadiusTopRight=6, cornerRadiusBottomRight=6
     ).encode(
-        y=alt.Y(f"{y_col}:N", sort="-x", title=y_title),
-        x=alt.X(f"{x_col}:Q", title=x_title, axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+        y=alt.Y(f"{y_col}:N", sort="-x", title=y_title, axis=alt.Axis(labelColor=C["text_label"], titleColor=C["text_label"])),
+        x=alt.X(f"{x_col}:Q", title=x_title, axis=alt.Axis(labelExpr=VND_LABEL_EXPR, labelColor=C["text_label"], titleColor=C["text_label"])),
         color=alt.value(C["primary"]),
         tooltip=[
             alt.Tooltip(f"{y_col}:N", title="Mã / Code"),
@@ -55,10 +55,13 @@ def _gradient_hbar(data, x_col, y_col, x_title, y_title, top_n=8):
             alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
         ],
     )
-    labels = bars.mark_text(align="left", dx=6, fontSize=11, fontWeight=600, color=C["text_label"]).encode(
+    labels = alt.Chart(data).mark_text(align="left", dx=6, fontSize=11, fontWeight=700).encode(
+        y=alt.Y(f"{y_col}:N", sort="-x"),
+        x=alt.X(f"{x_col}:Q"),
+        color=alt.value(C["text_label"]),
         text=alt.Text("_label:N")
     )
-    return (bars + labels).properties(height=280)
+    return alt.layer(bars, labels).resolve_scale(color='independent').properties(height=280)
 
 
 def _gradient_vbar(data, x_col, y_col, x_title, y_title, top_n=7):
@@ -80,8 +83,8 @@ def _gradient_vbar(data, x_col, y_col, x_title, y_title, top_n=7):
     bars = alt.Chart(data).mark_bar(
         cornerRadiusTopLeft=6, cornerRadiusTopRight=6
     ).encode(
-        x=alt.X(f"{y_col}:N", sort="-y", title=y_title, axis=alt.Axis(labelAngle=-25)),
-        y=alt.Y(f"{x_col}:Q", title=x_title, axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+        x=alt.X(f"{y_col}:N", sort="-y", title=y_title, axis=alt.Axis(labelAngle=0, labelColor=C["text_label"], titleColor=C["text_label"])),
+        y=alt.Y(f"{x_col}:Q", title=x_title, axis=alt.Axis(labelExpr=VND_LABEL_EXPR, labelColor=C["text_label"], titleColor=C["text_label"])),
         color=alt.value(C["primary"]),
         tooltip=[
             alt.Tooltip(f"{y_col}:N", title="Mã/Code"),
@@ -89,10 +92,13 @@ def _gradient_vbar(data, x_col, y_col, x_title, y_title, top_n=7):
             alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
         ],
     )
-    labels = bars.mark_text(align="center", baseline="bottom", dy=-8, fontSize=11, fontWeight=600, color=C["text_label"]).encode(
+    labels = alt.Chart(data).mark_text(align="center", baseline="bottom", dy=-6, fontSize=11, fontWeight=700).encode(
+        x=alt.X(f"{y_col}:N", sort="-y"),
+        y=alt.Y(f"{x_col}:Q"),
+        color=alt.value(C["text_label"]),
         text=alt.Text("_label:N")
     )
-    return (bars + labels).properties(height=280)
+    return alt.layer(bars, labels).resolve_scale(color='independent').properties(height=280)
 
 
 def _donut_chart(data, x_col, y_col, x_title):
@@ -101,10 +107,11 @@ def _donut_chart(data, x_col, y_col, x_title):
     total = data[x_col].sum()
     data = data.copy()
     data["_pct"] = data[x_col] / total if total > 0 else 0
-    data["_pct_label"] = data["_pct"].apply(lambda p: f"{p*100:.1f}%")
+    # Chỉ hiển thị text trực tiếp trên arc cho lát cắt >= 4% để tránh chồng chữ
+    data["_pct_label"] = data["_pct"].apply(lambda p: f"{p*100:.1f}%" if p >= 0.04 else "")
     data["_val_label"] = data[x_col].apply(_fmt_label)
     
-    # Map categories to friendly bilingual names
+    # Map categories to friendly bilingual names with % share in legend
     lang = st.session_state.get("lang", "en")
     cat_translation = {
         "Room": "Room" if lang == "en" else "Doanh thu phòng",
@@ -113,13 +120,30 @@ def _donut_chart(data, x_col, y_col, x_title):
         "Other": "Other" if lang == "en" else "Khác"
     }
     data["_desc"] = data[y_col].apply(lambda x: cat_translation.get(x, x))
+    data["_legend_name"] = data.apply(lambda r: f"{r['_desc']} ({r['_pct']:.1%})", axis=1)
+    
+    # Ensure color domain perfectly matches the CATEGORY_ORDER mapping of the bar chart
+    domain_legend = []
+    range_colors = []
+    base_color_map = {
+        "Room": C["primary"], 
+        "FnB": C["positive"], 
+        "ServiceCharge": C["warn"], 
+        "Other": C["gray"]
+    }
+    for cat in CATEGORY_ORDER:
+        cat_rows = data[data[y_col] == cat]
+        if not cat_rows.empty:
+            domain_legend.append(cat_rows.iloc[0]["_legend_name"])
+            range_colors.append(base_color_map.get(cat, C["gray"]))
 
     base = alt.Chart(data).encode(
         theta=alt.Theta(f"{x_col}:Q", stack=True),
         color=alt.Color(
-            f"{y_col}:N",
-            scale=alt.Scale(domain=CATEGORY_ORDER, range=[C["primary"], C["positive"], C["warn"], C["gray"]]),
-            legend=alt.Legend(title=t("axis.category") if lang == "vi" else "Category", orient="bottom")
+            "_legend_name:N",
+            title=t("axis.category") if lang == "vi" else "Category",
+            scale=alt.Scale(domain=domain_legend, range=range_colors),
+            legend=alt.Legend(orient="right", labelColor=C["text_label"], titleColor=C["text_label"], symbolType="circle", symbolSize=120, labelFontSize=12)
         ),
         tooltip=[
             alt.Tooltip("_desc:N", title=t("axis.category")),
@@ -128,11 +152,13 @@ def _donut_chart(data, x_col, y_col, x_title):
         ]
     )
     
-    donut = base.mark_arc(innerRadius=42, outerRadius=70)
-    text = base.mark_text(radius=88, size=11, color=C["text_label"]).encode(
+    stroke_color = "#FFFFFF" if current_theme() == "light" else "#020617"
+    donut = base.mark_arc(innerRadius=65, outerRadius=115, stroke=stroke_color, strokeWidth=2)
+    text = base.mark_text(radius=90, size=11, fontWeight=700).encode(
+        color=alt.value("#FFFFFF"),
         text=alt.Text("_pct_label:N")
     )
-    return (donut + text).properties(height=280)
+    return (donut + text).properties(height=340)
 
 
 def draw(start_date, end_date, hotel_id=None):
@@ -159,11 +185,13 @@ def draw(start_date, end_date, hotel_id=None):
                 ["month", "revenue_category"], as_index=False
             )["posted_amount"].sum()
             x_enc     = alt.X("month:N", title=t("axis.month"),
-                                sort=sorted(src["month"].unique()))
+                                sort=sorted(src["month"].unique()),
+                                axis=alt.Axis(labelAngle=0, labelColor=C["text_label"], titleColor=C["text_label"]))
             x_tooltip = alt.Tooltip("month:N", title=t("axis.month"))
         else:
             src       = df_chart
-            x_enc     = alt.X("revenue_date:T", title=t("axis.date"))
+            x_enc     = alt.X("revenue_date:T", title=t("axis.date"),
+                                axis=alt.Axis(labelColor=C["text_label"], titleColor=C["text_label"]))
             x_tooltip = alt.Tooltip("revenue_date:T", title=t("axis.date"),
                                      format="%d/%m/%Y")
         title = t("chart.revenue_by_month") if by_month else t("chart.revenue_by_day")
@@ -173,8 +201,9 @@ def draw(start_date, end_date, hotel_id=None):
         totals = src.groupby(x_col, as_index=False)["posted_amount"].sum()
         totals["_label"] = totals["posted_amount"].apply(_fmt_label)
         x_enc_tot = alt.X(f"{x_col}:N", title=t("axis.month") if by_month else t("axis.date"),
-                            sort=sorted(src[x_col].unique()) if by_month else None)
-        y_max = totals["posted_amount"].max() * 1.15
+                            sort=sorted(src[x_col].unique()) if by_month else None,
+                            axis=alt.Axis(labelAngle=0, labelColor=C["text_label"], titleColor=C["text_label"]))
+        y_max = totals["posted_amount"].max() * 1.18
 
         if by_month:
             bars = alt.Chart(src).mark_bar(
@@ -182,7 +211,7 @@ def draw(start_date, end_date, hotel_id=None):
             ).encode(
                 x=x_enc,
                 y=alt.Y("sum(posted_amount):Q", title=t("axis.revenue"),
-                        axis=alt.Axis(labelExpr=VND_LABEL_EXPR),
+                        axis=alt.Axis(labelExpr=VND_LABEL_EXPR, labelColor=C["text_label"], titleColor=C["text_label"]),
                         scale=alt.Scale(domainMax=y_max)),
                 color=alt.Color(
                     "revenue_category:N", title=t("axis.category"),
@@ -199,13 +228,14 @@ def draw(start_date, end_date, hotel_id=None):
             ).properties(height=300)
 
             labels = alt.Chart(totals).mark_text(
-                align="center", baseline="bottom", dy=-4, fontSize=13, color=C["text_label"]
+                align="center", baseline="bottom", dy=-6, fontSize=12, fontWeight=700
             ).encode(
                 x=x_enc_tot,
                 y=alt.Y("posted_amount:Q"),
+                color=alt.value(C["text_label"]),
                 text=alt.Text("_label:N"),
             )
-            chart = bars + labels
+            chart = alt.layer(bars, labels).resolve_scale(color='independent')
         else:
             # Daily view uses smooth stacked Area chart instead of cluttered thin bars
             chart = alt.Chart(src).mark_area(

@@ -18,7 +18,7 @@ def _delta_html(current, prior, fmt, higher_is_better=True):
     arrow = "↑" if pct >= 0 else "↓"
     
     label = t("kpi.delta_label")
-    return f'<div style="margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"><span style="background-color:{bg_color}; color:{text_color}; font-size:12px; font-weight:600; padding:2px 8px; border-radius:100px; display:inline-flex; align-items:center; gap:2px; white-space:nowrap;">{arrow} {abs(pct):.1f}%</span><span style="color:#94A3B8; font-size:11px; white-space:nowrap;">{label}</span></div>'
+    return f'<div style="margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"><span style="background-color:{bg_color}; color:{text_color}; font-size:12px; font-weight:600; padding:2px 8px; border-radius:100px; display:inline-flex; align-items:center; gap:2px; white-space:nowrap;">{arrow} {abs(pct):.1f}%</span><span style="color:var(--text-secondary); font-size:11px; white-space:nowrap;">{label}</span></div>'
 
 
 def kpi_card(label, value, current=None, prior=None, fmt="{:.1f}", badge=None, higher_is_better=True):

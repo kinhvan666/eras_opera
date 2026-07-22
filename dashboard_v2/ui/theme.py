@@ -12,7 +12,16 @@ _LIGHT = {
 }
 
 def current_theme() -> str:
-    return st.session_state.get("ui_theme", "dark")
+    if "ui_theme" in st.session_state and st.session_state["ui_theme"]:
+        return st.session_state["ui_theme"]
+    try:
+        if hasattr(st, "context") and hasattr(st.context, "theme") and st.context.theme:
+            t_type = getattr(st.context.theme, "type", None)
+            if t_type:
+                return t_type
+    except Exception:
+        pass
+    return "light"
 
 # Get the appropriate chart_colors for the current theme
 def chart_colors() -> dict:

@@ -1,27 +1,45 @@
 :root {
-  --bg-primary: #F8FAFC;  --bg-card: #FFFFFF;
-  --text-primary: #0F172A; --text-secondary: #475569;
-  --accent-blue: #2563EB;
-  --kpi-positive: #059669; --kpi-negative: #DC2626; --kpi-neutral: #64748B;
-  --badge-estimated-bg: #D97706; --badge-estimated-text: #FFFFFF;
+  --bg-primary: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --accent-blue: #1E40AF;
+  --kpi-positive: #047857;
+  --kpi-negative: #B91C1C;
+  --kpi-neutral: #64748B;
+  --badge-estimated-bg: #D97706;
+  --badge-estimated-text: #FFFFFF;
   --border: #E2E8F0;
-  --title-gradient-from: #0F172A; --title-gradient-to: #2563EB;
+  --title-gradient-from: #0F172A;
+  --title-gradient-to: #1E40AF;
 }
 
 /* Light Theme Card Shadows & Hover states */
 .kpi-card {
   background: var(--bg-card) !important;
   border-color: var(--border) !important;
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04) !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03) !important;
 }
 
 .kpi-card:hover {
-  border-color: #3B82F6 !important;
+  border-color: #2563EB !important;
   box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04) !important;
+}
+
+.kpi-value {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
 }
 
 /* Container border & shadow overrides for Streamlit containers in light mode */
 [data-testid="stVerticalBlockBorderWrapper"] {
   border-color: #E2E8F0 !important;
   box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04) !important;
+  background-color: #FFFFFF !important;
 }
+
+/* Table / Dataframe styling for light mode */
+[data-testid="stDataFrame"] {
+  color: #0F172A !important;
+}
+

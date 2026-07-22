@@ -28,6 +28,41 @@ html, body, [class*="css"] {
   background-color: var(--bg-primary);
 }
 
+/* Form labels readability fix for both dark and light modes */
+label[data-testid="stWidgetLabel"],
+label[data-testid="stWidgetLabel"] p,
+[data-testid="stForm"] label,
+[data-testid="stForm"] label p,
+.stTextInput label,
+.stTextInput label p {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+}
+
+/* ERAS Group Brand Green Button (#50B948 sampled from logo.png) */
+[data-testid="stFormSubmitButton"] button,
+.stButton button[kind="primary"],
+.stSubmitButton button {
+  background-color: #50B948 !important;
+  background-image: linear-gradient(135deg, #50B948 0%, #44A73C 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 10px rgba(80, 185, 72, 0.25) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+[data-testid="stFormSubmitButton"] button:hover,
+.stButton button[kind="primary"]:hover,
+.stSubmitButton button:hover {
+  background-color: #44A73C !important;
+  background-image: linear-gradient(135deg, #44A73C 0%, #3B9633 100%) !important;
+  box-shadow: 0 6px 14px rgba(80, 185, 72, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
 /* Hide Streamlit default header bar and footer */
 [data-testid="stHeader"],
 [data-testid="stHeader"] *,

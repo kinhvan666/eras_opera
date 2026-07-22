@@ -188,10 +188,20 @@ def _attempt_login(username: str, password: str) -> str | None:
 
 def _render_login_page() -> None:
     logo_path = Path(__file__).parent.parent / "logo.png"
-    theme_css = Path(__file__).parent.parent / "styles" / "theme.css"
+    theme_dir = Path(__file__).parent.parent / "styles"
 
-    if theme_css.exists():
-        st.markdown(f"<style>{theme_css.read_text()}</style>", unsafe_allow_html=True)
+    ui_theme = st.session_state.get("ui_theme")
+    if not ui_theme:
+        try:
+            ui_theme = st.context.theme.type or "dark"
+        except Exception:
+            ui_theme = "dark"
+
+    css = (theme_dir / "theme.css").read_text() if (theme_dir / "theme.css").exists() else ""
+    if ui_theme == "light" and (theme_dir / "theme-light.css").exists():
+        css += (theme_dir / "theme-light.css").read_text()
+
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
     import base64
     logo_b64 = ""

@@ -54,9 +54,9 @@ def _segment_hbar(df, code_col, val_col, x_title, y_title, top_n=None):
         cornerRadiusTopRight=3,
         cornerRadiusBottomRight=3
     ).encode(
-        y=alt.Y("_axis_label:N", sort="-x", title=y_title, axis=alt.Axis(labelLimit=230)),
-        x=alt.X(f"{val_col}:Q", title=x_title, axis=alt.Axis(grid=True, tickCount=5, gridOpacity=0.15)),
-        opacity=alt.condition(alt.datum._rank == 1, alt.value(1.0), alt.value(0.55)),
+        y=alt.Y("_axis_label:N", sort="-x", title=y_title, axis=alt.Axis(labelLimit=230, labelColor=C["text_label"], titleColor=C["text_label"])),
+        x=alt.X(f"{val_col}:Q", title=x_title, axis=alt.Axis(grid=True, tickCount=5, gridOpacity=0.15, labelColor=C["text_label"], titleColor=C["text_label"])),
+        opacity=alt.value(1.0),
         tooltip=[
             alt.Tooltip(f"{code_col}:N", title="Mã / Code"),
             alt.Tooltip("_desc:N", title=y_title),
@@ -65,16 +65,19 @@ def _segment_hbar(df, code_col, val_col, x_title, y_title, top_n=None):
         ]
     )
     
-    labels = bars.mark_text(
+    labels = alt.Chart(agg).mark_text(
         align="left",
         dx=5,
         fontSize=11,
-        color=C["text_label"]
+        fontWeight=700
     ).encode(
+        y=alt.Y("_axis_label:N", sort="-x"),
+        x=alt.X(f"{val_col}:Q"),
+        color=alt.value(C["text_label"]),
         text=alt.Text("_label:N")
     )
     
-    return (bars + labels).properties(height=280)
+    return alt.layer(bars, labels).resolve_scale(color='independent').properties(height=280)
 
 
 def draw(start_date, end_date, hotel_id=None):

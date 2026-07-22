@@ -17,10 +17,10 @@ VND_LABEL_EXPR = (
 
 
 def _fmt(v):
-    if v >= 1e9: return f"{v/1e9:.2f}B"
-    if v >= 1e6: return f"{v/1e6:.1f}M"
-    if v >= 1e3: return f"{v/1e3:.0f}K"
-    return f"{v:,.0f}"
+    if v >= 1e9: return f"₫{v/1e9:.1f}B"
+    if v >= 1e6: return f"₫{v/1e6:.0f}M"
+    if v >= 1e3: return f"₫{v/1e3:.0f}K"
+    return f"₫{v:,.0f}"
 
 
 def _monthly(df, start_date=None, end_date=None):
@@ -112,7 +112,8 @@ def draw(start_date, end_date, hotel_id=None):
         mdf["_adr_label"] = mdf.apply(lambda r: make_kpi_label(r, r["adr"]), axis=1)
         mdf["_occ_label"] = mdf.apply(lambda r: make_kpi_label(r, r["occupancy"], True), axis=1)
         mdf["_cancel_label"] = mdf.apply(lambda r: make_kpi_label(r, r["cancellation_rate"], True), axis=1)
-        x_field = alt.X("month:N", title=t("axis.month"), sort=list(mdf["month"]))
+        x_field = alt.X("month:N", title=t("axis.month"), sort=list(mdf["month"]),
+                        axis=alt.Axis(labelAngle=0, labelColor=C["text_label"], titleColor=C["text_label"], labelFontSize=11, labelFontWeight=600))
         x_tooltip = alt.Tooltip("month:N", title=t("axis.month"))
         src = mdf
 
@@ -120,7 +121,8 @@ def draw(start_date, end_date, hotel_id=None):
         if not df_rev_day.empty:
             df_rev_day["month"] = pd.to_datetime(df_rev_day["business_date"]).dt.to_period("M").astype(str)
             rev_src = df_rev_day.groupby("month", as_index=False)["total_revenue"].sum().sort_values("month")
-            rev_x = alt.X("month:N", title=t("axis.month"), sort=list(rev_src["month"]))
+            rev_x = alt.X("month:N", title=t("axis.month"), sort=list(rev_src["month"]),
+                          axis=alt.Axis(labelAngle=0, labelColor=C["text_label"], titleColor=C["text_label"], labelFontSize=11, labelFontWeight=600))
             rev_src = pd.merge(rev_src, mdf[["month", "is_partial"]], on="month", how="left")
             rev_src["is_partial"] = rev_src["is_partial"].fillna(False)
         else:
@@ -141,12 +143,14 @@ def draw(start_date, end_date, hotel_id=None):
         rev_src["_rev_label"] = rev_src.apply(make_rev_label, axis=1)
     else:
         src = df
-        x_field = alt.X("business_date:T", title=t("axis.date"))
+        x_field = alt.X("business_date:T", title=t("axis.date"),
+                        axis=alt.Axis(labelColor=C["text_label"], titleColor=C["text_label"]))
         x_tooltip = alt.Tooltip("business_date:T", title=t("axis.date"))
 
         # Revenue chart: daily actual (fct_folio_line)
         rev_src = df_rev_day if not df_rev_day.empty else df
-        rev_x = (alt.X("business_date:T", title=t("axis.date"))
+        rev_x = (alt.X("business_date:T", title=t("axis.date"),
+                       axis=alt.Axis(labelColor=C["text_label"], titleColor=C["text_label"]))
                  if not df_rev_day.empty else x_field)
 
     col1, col2 = st.columns(2)
@@ -156,19 +160,25 @@ def draw(start_date, end_date, hotel_id=None):
         c = chart_wrapper(title, height=350)
         with c:
             if by_month:
-                bars = alt.Chart(rev_src).mark_bar(color=C["primary"], cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
+                bars = alt.Chart(rev_src).mark_bar(
+                    color=C["primary"], cornerRadiusTopLeft=3, cornerRadiusTopRight=3
+                ).encode(
                     x=rev_x,
-                    y=alt.Y("total_revenue:Q", title=t("axis.revenue"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
-                    opacity=alt.condition("datum.is_partial", alt.value(0.45), alt.value(0.8)),
+                    y=alt.Y("total_revenue:Q", title=t("axis.revenue"),
+                            axis=alt.Axis(labelExpr=VND_LABEL_EXPR, labelColor=C["text_label"], titleColor=C["text_label"])),
+                    opacity=alt.condition("datum.is_partial", alt.value(0.75), alt.value(1.0)),
                     tooltip=[x_tooltip, alt.Tooltip("total_revenue:Q", format=",.0f", title=t("axis.revenue"))],
                 ).properties(height=280)
                 if "_rev_label" in rev_src.columns:
-                    labels = bars.mark_text(align="center", baseline="bottom", dy=-4, fontSize=12, color=C["text_label"]).encode(
-                        text=alt.Text("_rev_label:N"),
-                        opacity=alt.value(1.0)
+                    labels = alt.Chart(rev_src).mark_text(align="center", baseline="bottom", dy=-4, fontSize=12, fontWeight=700).encode(
+                        x=rev_x,
+                        y=alt.Y("total_revenue:Q"),
+                        color=alt.value(C["text_label"]),
+                        text=alt.Text("_rev_label:N")
                     )
-                    bars = bars + labels
-                st.altair_chart(bars, use_container_width=True)
+                    st.altair_chart(alt.layer(bars, labels).resolve_scale(color='independent'), use_container_width=True)
+                else:
+                    st.altair_chart(bars, use_container_width=True)
             else:
                 r_src = _with_ma7(rev_src, "total_revenue")
                 wk = _weekend_bands(r_src)
@@ -177,7 +187,8 @@ def draw(start_date, end_date, hotel_id=None):
                 )
                 line = alt.Chart(r_src).mark_line(color=C["primary"], strokeWidth=1.5, opacity=0.35).encode(
                     x=rev_x,
-                    y=alt.Y("total_revenue:Q", title=t("axis.revenue"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+                    y=alt.Y("total_revenue:Q", title=t("axis.revenue"),
+                            axis=alt.Axis(labelExpr=VND_LABEL_EXPR, labelColor=C["text_label"], titleColor=C["text_label"])),
                     tooltip=[x_tooltip, alt.Tooltip("total_revenue:Q", format=",.0f", title=t("axis.revenue"))],
                 )
                 ma7 = alt.Chart(r_src).mark_line(color=C["primary"], strokeWidth=2.5, opacity=1.0).encode(
@@ -194,13 +205,14 @@ def draw(start_date, end_date, hotel_id=None):
             if by_month:
                 base = alt.Chart(src).encode(
                     x=x_field,
-                    y=alt.Y("occupancy:Q", title=t("axis.occupancy"), axis=alt.Axis(format="%")),
+                    y=alt.Y("occupancy:Q", title=t("axis.occupancy"),
+                            axis=alt.Axis(format="%", labelColor=C["text_label"], titleColor=C["text_label"])),
                     tooltip=[x_tooltip, alt.Tooltip("occupancy:Q", format=".1%", title=t("axis.occupancy"))],
                 )
                 st.altair_chart(
-                    (base.mark_line(color=C["primary"], strokeWidth=2)
-                     + base.mark_point(color=C["primary"], size=60, filled=True)
-                     + base.mark_text(dy=-12, fontSize=12, color=C["text_label"]).encode(
+                    (base.mark_line(color=C["primary"], strokeWidth=2.5)
+                     + base.mark_point(color=C["primary"], size=70, filled=True)
+                     + base.mark_text(dy=-12, fontSize=12, fontWeight=700, color=C["text_label"]).encode(
                           text=alt.Text("_occ_label:N")
                       )).properties(height=280),
                     use_container_width=True,
@@ -213,16 +225,18 @@ def draw(start_date, end_date, hotel_id=None):
                 )
                 area = alt.Chart(o_src).mark_area(opacity=0.15, color=C["primary"]).encode(
                     x=x_field,
-                    y=alt.Y("occupancy:Q", title=t("axis.occupancy"), axis=alt.Axis(format="%")),
+                    y=alt.Y("occupancy:Q", title=t("axis.occupancy"),
+                            axis=alt.Axis(format="%", labelColor=C["text_label"], titleColor=C["text_label"])),
                 )
                 line = alt.Chart(o_src).mark_line(color=C["primary"], strokeWidth=1.5, opacity=0.35).encode(
-                    x="business_date:T",
-                    y="occupancy:Q",
+                    x=x_field,
+                    y=alt.Y("occupancy:Q", title=t("axis.occupancy"),
+                            axis=alt.Axis(format="%", labelColor=C["text_label"], titleColor=C["text_label"])),
                     tooltip=[x_tooltip, alt.Tooltip("occupancy:Q", format=".1%", title=t("axis.occupancy"))],
                 )
                 ma7 = alt.Chart(o_src).mark_line(color=C["primary"], strokeWidth=2.5, opacity=1.0).encode(
-                    x="business_date:T",
-                    y="occupancy_ma7:Q",
+                    x=x_field,
+                    y=alt.Y("occupancy_ma7:Q", title=t("trend.ma7")),
                     tooltip=[x_tooltip, alt.Tooltip("occupancy_ma7:Q", format=".1%", title=t("trend.ma7"))],
                 )
                 st.altair_chart((bands + area + line + ma7).properties(height=280), use_container_width=True)
@@ -238,13 +252,14 @@ def draw(start_date, end_date, hotel_id=None):
             if by_month:
                 base = alt.Chart(src).encode(
                     x=x_field,
-                    y=alt.Y("adr:Q", title=t("axis.adr"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+                    y=alt.Y("adr:Q", title=t("axis.adr"),
+                            axis=alt.Axis(labelExpr=VND_LABEL_EXPR, labelColor=C["text_label"], titleColor=C["text_label"])),
                     tooltip=[x_tooltip, alt.Tooltip("adr:Q", format=",.0f", title=t("axis.adr"))],
                 )
                 st.altair_chart(
-                    (base.mark_line(color=C["primary"], strokeWidth=2)
-                     + base.mark_point(color=C["primary"], size=60, filled=True)
-                     + base.mark_text(dy=-12, fontSize=12, color=C["text_label"]).encode(
+                    (base.mark_line(color=C["primary"], strokeWidth=2.5)
+                     + base.mark_point(color=C["primary"], size=70, filled=True)
+                     + base.mark_text(dy=-12, fontSize=12, fontWeight=700, color=C["text_label"]).encode(
                           text=alt.Text("_adr_label:N")
                       )).properties(height=280),
                     use_container_width=True,
@@ -259,7 +274,8 @@ def draw(start_date, end_date, hotel_id=None):
                 )
                 line = alt.Chart(a_src).mark_line(color=C["primary"], strokeWidth=1.5, opacity=0.35).encode(
                     x=x_field,
-                    y=alt.Y("adr:Q", title=t("axis.adr"), axis=alt.Axis(labelExpr=VND_LABEL_EXPR)),
+                    y=alt.Y("adr:Q", title=t("axis.adr"),
+                            axis=alt.Axis(labelExpr=VND_LABEL_EXPR, labelColor=C["text_label"], titleColor=C["text_label"])),
                     tooltip=[x_tooltip, alt.Tooltip("adr:Q", format=",.0f", title=t("axis.adr"))],
                 )
                 ma7 = alt.Chart(a_src).mark_line(color=C["primary"], strokeWidth=2.5, opacity=1.0).encode(
@@ -277,13 +293,13 @@ def draw(start_date, end_date, hotel_id=None):
                 base = alt.Chart(src).encode(
                     x=x_field,
                     y=alt.Y("cancellation_rate:Q", title=t("axis.cancel"),
-                            axis=alt.Axis(format="%")),
+                            axis=alt.Axis(format="%", labelColor=C["text_label"], titleColor=C["text_label"])),
                     tooltip=[x_tooltip, alt.Tooltip("cancellation_rate:Q", format=".1%", title=t("axis.cancel"))],
                 )
                 st.altair_chart(
-                    (base.mark_line(color=C["warn"], strokeWidth=2)
-                     + base.mark_point(color=C["warn"], size=60, filled=True)
-                     + base.mark_text(dy=-12, fontSize=12, color=C["text_label"]).encode(
+                    (base.mark_line(color=C["warn"], strokeWidth=2.5)
+                     + base.mark_point(color=C["warn"], size=70, filled=True)
+                     + base.mark_text(dy=-12, fontSize=12, fontWeight=700, color=C["text_label"]).encode(
                           text=alt.Text("_cancel_label:N")
                       )).properties(height=280),
                     use_container_width=True,
@@ -295,9 +311,10 @@ def draw(start_date, end_date, hotel_id=None):
                 st.altair_chart(
                     alt.Chart(c_src).mark_bar(color=C["warn"], opacity=0.75, size=bar_size,
                                              cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
-                        x=alt.X("week:T", title=t("axis.date")),
+                        x=alt.X("week:T", title=t("axis.date"),
+                                axis=alt.Axis(labelColor=C["text_label"], titleColor=C["text_label"])),
                         y=alt.Y("cancellation_rate:Q", title=t("axis.cancel"),
-                                axis=alt.Axis(format="%")),
+                                axis=alt.Axis(format="%", labelColor=C["text_label"], titleColor=C["text_label"])),
                         tooltip=[alt.Tooltip("week:T", title=t("axis.date")), alt.Tooltip("cancellation_rate:Q", format=".1%", title=t("axis.cancel"))],
                     ).properties(height=280),
                     use_container_width=True,
