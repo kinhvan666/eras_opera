@@ -122,6 +122,10 @@ def _donut_chart(data, x_col, y_col, x_title):
     data["_desc"] = data[y_col].apply(lambda x: cat_translation.get(x, x))
     data["_legend_name"] = data.apply(lambda r: f"{r['_desc']} ({r['_pct']:.1%})", axis=1)
     
+    cat_order_map = {cat: i for i, cat in enumerate(CATEGORY_ORDER)}
+    data["_sort_order"] = data[y_col].map(cat_order_map)
+    data = data.sort_values("_sort_order").reset_index(drop=True)
+
     # Ensure color domain perfectly matches the CATEGORY_ORDER mapping of the bar chart
     domain_legend = []
     range_colors = []
@@ -137,6 +141,7 @@ def _donut_chart(data, x_col, y_col, x_title):
             domain_legend.append(cat_rows.iloc[0]["_legend_name"])
             range_colors.append(base_color_map.get(cat, C["gray"]))
 
+    # Use native Altair stacking instead of manual radian calculations
     base = alt.Chart(data).encode(
         theta=alt.Theta(f"{x_col}:Q", stack=True),
         color=alt.Color(
@@ -145,6 +150,7 @@ def _donut_chart(data, x_col, y_col, x_title):
             scale=alt.Scale(domain=domain_legend, range=range_colors),
             legend=alt.Legend(orient="right", labelColor=C["text_label"], titleColor=C["text_label"], symbolType="circle", symbolSize=120, labelFontSize=12)
         ),
+        order=alt.Order("_sort_order:O", sort="ascending"),
         tooltip=[
             alt.Tooltip("_desc:N", title=t("axis.category")),
             alt.Tooltip(f"{x_col}:Q", format=",.0f", title=x_title),
@@ -154,11 +160,7 @@ def _donut_chart(data, x_col, y_col, x_title):
     
     stroke_color = "#FFFFFF" if current_theme() == "light" else "#020617"
     donut = base.mark_arc(innerRadius=65, outerRadius=115, stroke=stroke_color, strokeWidth=2)
-    text = base.mark_text(radius=90, size=11, fontWeight=700).encode(
-        color=alt.value("#FFFFFF"),
-        text=alt.Text("_pct_label:N")
-    )
-    return (donut + text).properties(height=340)
+    return donut.properties(height=340)
 
 
 def draw(start_date, end_date, hotel_id=None):

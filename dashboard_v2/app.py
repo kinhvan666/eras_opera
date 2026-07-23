@@ -96,6 +96,34 @@ if st.session_state["ui_theme"] == "light":
     css += (Path(__file__).parent / "styles" / "theme-light.css").read_text()
 st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
+# Patch st.altair_chart to explicitly sync with ui_theme instead of relying on buggy Streamlit native theme
+_orig_altair_chart = st.altair_chart
+def _patched_altair_chart(altair_chart, use_container_width=False, theme="streamlit", **kwargs):
+    import altair as alt
+    is_light = st.session_state.get("ui_theme", "light") == "light"
+    text_color = "#0F172A" if is_light else "#F8FAFC"
+    axis_color = "#E2E8F0" if is_light else "#334155"
+    
+    altair_chart = altair_chart.configure(
+        background="transparent",
+        title=alt.TitleConfig(color=text_color),
+        axis=alt.AxisConfig(
+            labelColor=text_color,
+            titleColor=text_color,
+            domainColor=axis_color,
+            gridColor=axis_color,
+            tickColor=axis_color
+        ),
+        legend=alt.LegendConfig(
+            labelColor=text_color,
+            titleColor=text_color
+        ),
+        view=alt.ViewConfig(strokeOpacity=0)
+    )
+    return _orig_altair_chart(altair_chart, use_container_width=use_container_width, theme=None, **kwargs)
+
+st.altair_chart = _patched_altair_chart
+
 logo_path = Path(__file__).parent / "logo.png"
 logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
 
