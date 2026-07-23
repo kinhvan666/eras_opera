@@ -12,6 +12,8 @@ Replace the hardcoded CSV approach for transaction codes by extracting them dire
 - `eras_dbt/models/staging/stg_transaction_codes.sql`
 - `eras_dbt/models/staging/stg_cashiering_postings.sql`
 - `dashboard_v2/data/repository.py`
+- `extractor/tests/test_hotel_config_database.py`
+- `eras_dbt/models/staging/schema.yml`
 
 ## Public Contracts
 - Extractor: Adds `transactionCodes` table or JSON output from `hotel_config.py`.
@@ -38,7 +40,9 @@ Replace the hardcoded CSV approach for transaction codes by extracting them dire
 | Gate / Scenario | Strategy | Proves SPEC criterion |
 | --- | --- | --- |
 | Extract transactionCodes mock | Fully-Automated | API data extracted successfully |
+| `insert_transaction_codes_snapshot` database tests | Fully-Automated | Database inserts work correctly |
 | `stg_transaction_codes` builds and passes tests | Hybrid | dbt models are correct |
+| `stg_transaction_codes` schema tests | Fully-Automated | dbt schema unique/not_null constraints pass |
 | `stg_cashiering_postings` calculates `net_amount` | Hybrid | `net_amount` logic is correct |
 | Dashboard UI renders with `net_amount` | Agent-Probe | UI removes hardcoded filter |
 
@@ -53,10 +57,12 @@ test("should extract transactionCodes successfully", () => {
 (none identified yet)
 
 ## Implementation Checklist
-1. Update `extractor/src/extractors/hotel_config.py` to add a method `fetch_transaction_codes` that calls `GET /transactionCodes` (under Front Desk Configuration API).
-2. Create `eras_dbt/models/staging/stg_transaction_codes.sql` to parse `transaction_code`, `classification`, and `generatesSetup`.
-3. Update `eras_dbt/models/staging/stg_cashiering_postings.sql` to LEFT JOIN `stg_transaction_codes` on `transaction_code` and calculate `net_amount` based on generatesSetup/Tax logic.
+1. Update `extractor/src/extractors/hotel_config.py` to add a method `fetch_transaction_codes` that calls `GET /transactionCodes` (under Front Desk Configuration API), ensuring API pagination is properly handled (e.g. using `fetch_all` or checking for `hasMore`).
+2. Create `eras_dbt/models/staging/stg_transaction_codes.sql` to parse `transaction_code`, `classification`, and `generatesSetup`. Deduplicate `transaction_code` using `DISTINCT ON` to prevent DBT fan-out risk.
+3. Update `eras_dbt/models/staging/stg_cashiering_postings.sql` to LEFT JOIN `stg_transaction_codes` on `transaction_code` and calculate `net_amount` based on generatesSetup/Tax logic. Use `COALESCE(s.posted_amount::numeric, 0)` to handle nulls safely.
 4. Update `dashboard_v2/data/repository.py` to query `net_amount` from `analytics.fct_folio_line` (or `stg_cashiering_postings` if materialized directly to fct) and remove the `NOT IN ('Tax', 'ServiceCharge')` hardcoded filter in `REVENUE_BREAKDOWN_SQL`, `REVENUE_ACTUAL_SQL`, etc.
+5. Add missing database tests in `test_hotel_config_database.py` for `insert_transaction_codes_snapshot()`.
+6. Add missing schema tests in `schema.yml` for `stg_transaction_codes` (unique on `transaction_code` + `hotel_id` and `not_null` constraints).
 
 ## Dependencies, Risks, Integration Notes
 - Risk: Changes in transaction code structure could impact `net_amount` calculation.
@@ -84,7 +90,9 @@ Test gates (C3 5-column table — ADDITIVE; existing consumers still parse the l
 | criterion id | behavior | strategy | proving test | gap-resolution |
 |---|---|---|---|---|
 | TC-1 | API data extracted successfully | Fully-Automated | Extract transactionCodes mock | A |
+| TC-1b | Database inserts work correctly | Fully-Automated | `insert_transaction_codes_snapshot` database tests | A |
 | TC-2 | dbt models are correct | Hybrid | `stg_transaction_codes` builds and passes tests | A |
+| TC-2b | dbt schema unique/not_null constraints pass | Fully-Automated | `stg_transaction_codes` schema tests | A |
 | TC-3 | `net_amount` logic is correct | Hybrid | `stg_cashiering_postings` calculates `net_amount` | A |
 | TC-4 | UI removes hardcoded filter | Agent-Probe | Dashboard UI renders with `net_amount` | A |
 
