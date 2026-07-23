@@ -31,23 +31,22 @@ staged as (
 
         -- Use classification from transaction codes if available, fallback to prefix
         case
-            when t.classification like '%"Tax"%' then 'Tax'
-            when t.classification like '%"ServiceCharge"%' then 'ServiceCharge'
+            when t.classification like '%"Tax"%' or t.classification like '%"ServiceCharge"%' or t.classification in ('Tax', 'ServiceCharge') then coalesce(t.transaction_group, case when s.transaction_code like '8%' then 'FnB' else 'Room' end)
             when t.classification like '{' || '%' then (t.classification::jsonb)->'transactionType'->>'code'
             when t.classification is not null then t.classification
             when s.transaction_code like '1%' then 'Room'
             when s.transaction_code like '2%' then 'FnB'
             when s.transaction_code like '3%' then 'FnB'
             when s.transaction_code like '6%' then 'FnB'
-            when s.transaction_code like '7%' then 'Tax'
-            when s.transaction_code like '8%' then 'ServiceCharge'
+            when s.transaction_code like '7%' then coalesce(t.transaction_group, 'Room')
+            when s.transaction_code like '8%' then coalesce(t.transaction_group, 'FnB')
             else 'Other'
         end                                                               as revenue_category,
-        -- net_amount calculation: excludes Tax and ServiceCharge
+        -- net_amount calculation: Tax and ServiceCharge subtracts from gross
         case
-            when t.classification like '%"Tax"%' or t.classification like '%"ServiceCharge"%' then 0
-            when t.classification in ('Tax', 'ServiceCharge') then 0
-            when s.transaction_code like '7%' or s.transaction_code like '8%' then 0
+            when t.classification like '%"Tax"%' or t.classification like '%"ServiceCharge"%' then -coalesce(s.posted_amount::numeric, 0)
+            when t.classification in ('Tax', 'ServiceCharge') then -coalesce(s.posted_amount::numeric, 0)
+            when s.transaction_code like '7%' or s.transaction_code like '8%' then -coalesce(s.posted_amount::numeric, 0)
             else coalesce(s.posted_amount::numeric, 0)
         end                                                               as net_amount
 

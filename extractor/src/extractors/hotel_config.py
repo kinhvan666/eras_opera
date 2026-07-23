@@ -73,7 +73,7 @@ class HotelConfigExtractor:
         
         while True:
             data = await self.client.fetch_one(endpoint, params=dict(params))
-            codes = data.get("transactionCodes") or []
+            codes = data.get("trxCodes") or data.get("transactionCodes") or []
             all_codes.extend(codes)
             
             if not data.get("hasMore") or not codes:
