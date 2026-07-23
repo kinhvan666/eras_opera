@@ -31,10 +31,10 @@ select distinct on (hotel_id, tc->>'transactionCode')
     hotel_id,
     tc->>'transactionCode' as transaction_code,
     tc->>'description' as description,
-    tc->>'transactionCodeType' as transaction_code_type,
-    tc->>'transactionGroup' as transaction_group,
-    tc->>'transactionSubGroup' as transaction_sub_group,
-    tc->>'classification' as classification,
+    case when tc->>'transactionCodeType' like '{' || '%' then tc->'transactionCodeType'->>'code' else tc->>'transactionCodeType' end as transaction_code_type,
+    case when tc->>'transactionGroup' like '{' || '%' then tc->'transactionGroup'->>'code' else tc->>'transactionGroup' end as transaction_group,
+    case when tc->>'transactionSubGroup' like '{' || '%' then tc->'transactionSubGroup'->>'code' else tc->>'transactionSubGroup' end as transaction_sub_group,
+    case when tc->>'classification' like '{' || '%' then coalesce(tc->'classification'->'transactionType'->>'code', tc->'classification'->>'code') else tc->>'classification' end as classification,
     tc->'generatesSetup' as generates_setup,
     extracted_at
 from unnested
