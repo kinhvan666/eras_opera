@@ -22,7 +22,6 @@ def fmt_vnd(val):
 from data.repository import (
     fetch_kpi_summary,
     fetch_properties,
-    fetch_revenue_actual_summary,
     fetch_adr_revpar_actual_summary,
     fetch_data_as_of,
 )
@@ -255,11 +254,6 @@ except Exception as e:
     st.error(t("msg.load_kpis_err", e=e))
 
 try:
-    actual_revenue, prior_actual_revenue = fetch_revenue_actual_summary(start_date, end_date, hotel_id)
-except Exception:
-    actual_revenue, prior_actual_revenue = None, None
-
-try:
     actual_adr, actual_revpar, prior_actual_adr, prior_actual_revpar = \
         fetch_adr_revpar_actual_summary(start_date, end_date, hotel_id)
 except Exception:
@@ -274,7 +268,7 @@ else:
     # Hàng 1: Chỉ số cốt lõi kinh doanh (Core Metrics)
     row1 = st.columns(4)
     with row1[0]:
-        kpi_card(t("kpi.revenue"), fmt_vnd(actual_revenue), actual_revenue, prior_actual_revenue)
+        kpi_card(t("kpi.revenue"), fmt_vnd(g(current, "total_revenue")), g(current, "total_revenue"), g(prior, "total_revenue"))
     with row1[1]:
         kpi_card(t("kpi.room_nights"), f"{current['room_nights']:,.0f}", current["room_nights"], g(prior, "room_nights"))
     with row1[2]:

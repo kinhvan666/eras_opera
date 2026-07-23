@@ -59,8 +59,13 @@ async def run(arrival_start_date: str, arrival_end_date: str):
         # Cashiering postings: independent raw table (raw.cashiering_postings), run order does
         # not matter relative to reservations. Backfill from BACKFILL_START_DATE to today.
         cashiering_extractor = CashieringExtractor(client)
-        print(f"Fetching cashiering postings from {BACKFILL_START_DATE.isoformat()} to today...")
-        postings = await cashiering_extractor.fetch_postings(BACKFILL_START_DATE, date.today())
+        
+        business_date = await hotel_extractor.fetch_business_date()
+        print(f"Fetched business date: {business_date.isoformat()}")
+        
+        yesterday = business_date - timedelta(days=1)
+        print(f"Fetching cashiering postings from {BACKFILL_START_DATE.isoformat()} to {yesterday.isoformat()}...")
+        postings = await cashiering_extractor.fetch_postings(BACKFILL_START_DATE, yesterday)
         print(f"Fetched {len(postings)} cashiering postings.")
         if postings:
             print("Upserting cashiering postings (ON CONFLICT on transaction_no)...")

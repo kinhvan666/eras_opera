@@ -42,3 +42,22 @@ class HotelConfigExtractor:
             params["offset"] += _PAGE_SIZE
 
         return total
+
+    async def fetch_business_date(self) -> "datetime.date":
+        """Fetches the current business date of the hotel.
+        
+        Endpoint: GET /bof/v1/hotels/{hotelId}/businessDate
+        """
+        import datetime
+        endpoint = f"/bof/v1/hotels/{settings.opera_hotel_id}/businessDate"
+        data = await self.client.fetch_one(endpoint)
+        
+        hotels = data.get("hotels", [])
+        if not hotels:
+            raise ValueError(f"No business date returned for hotel {settings.opera_hotel_id}")
+            
+        b_date_str = hotels[0].get("businessDate")
+        if not b_date_str:
+            raise ValueError(f"businessDate field missing in response: {data}")
+            
+        return datetime.date.fromisoformat(b_date_str)
