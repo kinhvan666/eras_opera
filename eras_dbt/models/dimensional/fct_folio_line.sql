@@ -24,6 +24,7 @@ select
 
     -- Measures
     posted_amount,
+    net_amount,
 
     -- Categorisation (derived in staging — no CASE WHEN needed here)
     revenue_category,

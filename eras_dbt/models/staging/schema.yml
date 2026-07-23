@@ -31,6 +31,22 @@ models:
       - name: reference
         description: "Reference string (raw_data.reference). Pass-through provenance column."
 
+  - name: stg_transaction_codes
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - hotel_id
+            - transaction_code
+    columns:
+      - name: transaction_code
+        description: "OPERA transaction code"
+        tests:
+          - not_null
+      - name: hotel_id
+        description: "OPERA hotel/property code"
+        tests:
+          - not_null
+
   - name: stg_reservations
     columns:
       - name: reservation_id

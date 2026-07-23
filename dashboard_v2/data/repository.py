@@ -86,11 +86,10 @@ REVENUE_BREAKDOWN_SQL = """
     with folio as (
         select
             reservation_id,
-            sum(posted_amount) as revenue
+            sum(net_amount) as revenue
         from analytics.fct_folio_line
         where revenue_date between %(start_date)s and %(end_date)s
           and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
-          and revenue_category not in ('Tax')
         group by reservation_id
     ),
     res_attrs as (
@@ -167,7 +166,7 @@ def fetch_kpi_daily_segmented(start_date, end_date, hotel_id=None, segment_col=N
 
 
 REVENUE_ACTUAL_SQL = """
-    SELECT revenue_date, revenue_category, SUM(posted_amount) AS posted_amount
+    SELECT revenue_date, revenue_category, SUM(net_amount) AS posted_amount
     FROM analytics.fct_folio_line
     WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
       AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
@@ -186,11 +185,10 @@ def fetch_revenue_actual(start_date, end_date, hotel_id=None):
 
 
 REVENUE_ACTUAL_KPI_SQL = """
-    SELECT SUM(posted_amount) AS revenue
+    SELECT SUM(net_amount) AS revenue
     FROM analytics.fct_folio_line
     WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
       AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
-      AND revenue_category NOT IN ('Tax')
 """
 
 
@@ -213,7 +211,7 @@ def fetch_revenue_actual_summary(start_date, end_date, hotel_id=None):
 
 
 ROOM_REVENUE_SQL = """
-    SELECT COALESCE(SUM(posted_amount), 0) AS room_revenue
+    SELECT COALESCE(SUM(net_amount), 0) AS room_revenue
     FROM analytics.fct_folio_line
     WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
       AND revenue_category = 'Room'

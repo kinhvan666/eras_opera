@@ -5,6 +5,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.main import run
+from datetime import date
 
 _START = "2026-04-17"
 _END = "2026-07-16"
@@ -32,8 +33,10 @@ def patched_run():
         MockClient.return_value = MagicMock()
 
         mock_hotel = MagicMock()
+        mock_hotel.fetch_business_date = AsyncMock(return_value=date(2026, 7, 23))
         mock_hotel.fetch_hotel_config = AsyncMock(return_value=_HOTEL_DATA)
         mock_hotel.fetch_physical_room_count = AsyncMock(return_value=_ROOM_COUNT)
+        mock_hotel.fetch_transaction_codes = AsyncMock(return_value={"trxCodes": []})
         MockHotel.return_value = mock_hotel
 
         mock_resv = MagicMock()

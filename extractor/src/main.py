@@ -35,6 +35,11 @@ async def run(arrival_start_date: str, arrival_end_date: str):
         db.insert_hotel_config_snapshot(settings.opera_hotel_id, hotel_config_data, physical_room_count)
         print("Hotel config snapshot inserted.")
 
+        print("Fetching transaction codes...")
+        transaction_codes_data = await hotel_extractor.fetch_transaction_codes()
+        db.insert_transaction_codes_snapshot(settings.opera_hotel_id, transaction_codes_data)
+        print("Transaction codes snapshot inserted.")
+
         extractor = ReservationExtractor(client)
 
         print(f"Fetching reservations with arrival {arrival_start_date}..{arrival_end_date}...")

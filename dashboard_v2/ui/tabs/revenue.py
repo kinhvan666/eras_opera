@@ -16,7 +16,7 @@ VND_LABEL_EXPR = (
     "format(datum.value, ',.0f')"
 )
 
-CATEGORY_ORDER  = ["Room", "FnB", "ServiceCharge", "Other"]
+CATEGORY_ORDER  = ["Room", "FnB", "Other"]
 
 
 def _fmt_label(v):
@@ -116,7 +116,6 @@ def _donut_chart(data, x_col, y_col, x_title):
     cat_translation = {
         "Room": "Room" if lang == "en" else "Doanh thu phòng",
         "FnB": "FnB" if lang == "en" else "FnB (Ẩm thực)",
-        "ServiceCharge": "Service Charge" if lang == "en" else "Phí dịch vụ",
         "Other": "Other" if lang == "en" else "Khác"
     }
     data["_desc"] = data[y_col].apply(lambda x: cat_translation.get(x, x))
@@ -132,7 +131,6 @@ def _donut_chart(data, x_col, y_col, x_title):
     base_color_map = {
         "Room": C["primary"], 
         "FnB": C["positive"], 
-        "ServiceCharge": C["warn"], 
         "Other": C["gray"]
     }
     for cat in CATEGORY_ORDER:
@@ -165,7 +163,7 @@ def _donut_chart(data, x_col, y_col, x_title):
 
 def draw(start_date, end_date, hotel_id=None):
     C = chart_colors()
-    cat_colors = [C["primary"], C["positive"], C["warn"], C["gray"]]
+    cat_colors = [C["primary"], C["positive"], C["gray"]]
     df_actual = fetch_revenue_actual(start_date, end_date, hotel_id)
     bdf = fetch_revenue_breakdown(start_date, end_date, hotel_id)
 
@@ -178,7 +176,7 @@ def draw(start_date, end_date, hotel_id=None):
 
     # ── Row 1: Revenue trend & Overall composition ───────────────────────────
     if df_actual is not None and not df_actual.empty:
-        df_chart = df_actual[~df_actual["revenue_category"].isin(["Tax"])].copy()
+        df_chart = df_actual[~df_actual["revenue_category"].isin(["Tax", "ServiceCharge"])].copy()
         if by_month:
             df_chart["month"] = (
                 pd.to_datetime(df_chart["revenue_date"]).dt.to_period("M").astype(str)

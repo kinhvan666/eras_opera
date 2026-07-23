@@ -26,6 +26,14 @@ class Database:
                     raw_data JSONB NOT NULL
                 );
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS raw.transaction_codes (
+                    id SERIAL PRIMARY KEY,
+                    hotel_id TEXT NOT NULL,
+                    extracted_at TIMESTAMPTZ DEFAULT NOW(),
+                    raw_data JSONB NOT NULL
+                );
+            """)
             # Unique constraint on reservation_id (extracted from JSONB) so that
             # re-runs and pagination retries are idempotent — no duplicate rows.
             # Uses a generated column expression index (functional unique index).
@@ -152,6 +160,18 @@ class Database:
                 VALUES (%s, %s, %s, NOW())
                 """,
                 (hotel_id, json.dumps(data), physical_room_count)
+            )
+            self.conn.commit()
+
+    def insert_transaction_codes_snapshot(self, hotel_id: str, data: dict):
+        """Appends a new transaction codes snapshot."""
+        with self.conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO raw.transaction_codes (hotel_id, raw_data, extracted_at)
+                VALUES (%s, %s, NOW())
+                """,
+                (hotel_id, json.dumps(data))
             )
             self.conn.commit()
 

@@ -23,6 +23,7 @@ _BASE = settings.opera_base_url
 
 _ENT_CONFIG_URL = f"{_BASE}/ent/config/v1/hotels/{_HOTEL_ID}"
 _ROOMS_URL = f"{_BASE}/rm/config/v1/hotels/{_HOTEL_ID}/rooms"
+_TRANSACTION_CODES_URL = f"{_BASE}/csh/v1/hotels/{_HOTEL_ID}/transactionCodes"
 
 
 def _rooms_page(room_ids: list[str]) -> dict:
@@ -84,3 +85,16 @@ async def test_fetch_physical_room_count_empty_rooms_returns_zero():
     count = await HotelConfigExtractor(BaseOperaClient()).fetch_physical_room_count()
 
     assert count == 0
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_fetch_transaction_codes_returns_json_body():
+    """fetch_transaction_codes() calls /csh/v1/hotels/{hotelId}/transactionCodes and returns JSON."""
+    respx.post(_TOKEN_URL).mock(return_value=Response(200, json=_TOKEN_RESP))
+    resp_body = {"transactionCodes": [{"transactionCode": "1000", "description": "Room"}]}
+    respx.get(_TRANSACTION_CODES_URL).mock(return_value=Response(200, json=resp_body))
+
+    result = await HotelConfigExtractor(BaseOperaClient()).fetch_transaction_codes()
+
+    assert result == resp_body

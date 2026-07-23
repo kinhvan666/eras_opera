@@ -71,3 +71,16 @@ def test_insert_hotel_config_snapshot_accepts_none_room_count(db):
     params = db._mock_cursor.execute.call_args[0][1]
     assert params[2] is None
     db.conn.commit.assert_called_once()
+
+
+def test_insert_transaction_codes_snapshot(db):
+    """Test inserting transaction codes snapshot."""
+    db.insert_transaction_codes_snapshot(_HOTEL_ID, {"transactionCodes": []})
+    
+    sql = db._mock_cursor.execute.call_args[0][0]
+    params = db._mock_cursor.execute.call_args[0][1]
+    
+    assert "INSERT INTO raw.transaction_codes" in sql
+    assert params[0] == _HOTEL_ID
+    assert json.loads(params[1]) == {"transactionCodes": []}
+    db.conn.commit.assert_called_once()

@@ -61,3 +61,23 @@ class HotelConfigExtractor:
             raise ValueError(f"businessDate field missing in response: {data}")
             
         return datetime.date.fromisoformat(b_date_str)
+
+    async def fetch_transaction_codes(self) -> dict:
+        """Fetches transaction codes configuration.
+        
+        Endpoint: GET /csh/v1/hotels/{hotelId}/transactionCodes
+        """
+        endpoint = f"/csh/v1/hotels/{settings.opera_hotel_id}/transactionCodes"
+        params = {"limit": _PAGE_SIZE, "offset": 0}
+        all_codes = []
+        
+        while True:
+            data = await self.client.fetch_one(endpoint, params=dict(params))
+            codes = data.get("transactionCodes") or []
+            all_codes.extend(codes)
+            
+            if not data.get("hasMore") or not codes:
+                break
+            params["offset"] += len(codes)
+            
+        return {"transactionCodes": all_codes}
