@@ -22,6 +22,7 @@ from data.repository import (
     fetch_kpi_summary,
     fetch_properties,
     fetch_adr_revpar_actual_summary,
+    fetch_revenue_actual_summary,
     fetch_data_as_of,
 )
 from ui.components import kpi_card
@@ -151,6 +152,11 @@ try:
 except Exception:
     actual_adr, actual_revpar, prior_actual_adr, prior_actual_revpar = None, None, None, None
 
+try:
+    current_rev_actual, prior_rev_actual = fetch_revenue_actual_summary(start_date, end_date, hotel_id)
+except Exception:
+    current_rev_actual, prior_rev_actual = None, None
+
 if current is None:
     st.info(t("msg.no_reservation"))
 else:
@@ -159,7 +165,7 @@ else:
 
     row1 = st.columns(5)
     with row1[0]:
-        kpi_card(t("kpi.revenue"), fmt_vnd(g(current, "total_revenue")), g(current, "total_revenue"), g(prior, "total_revenue"))
+        kpi_card(t("kpi.revenue"), fmt_vnd(current_rev_actual), current_rev_actual, prior_rev_actual)
     with row1[1]:
         kpi_card(t("kpi.occupancy"), f"{current['occupancy'] * 100:.1f}%", current["occupancy"], g(prior, "occupancy"))
     with row1[2]:
