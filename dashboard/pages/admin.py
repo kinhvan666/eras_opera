@@ -1,4 +1,4 @@
-# dashboard_v2/pages/admin.py
+# dashboard/pages/admin.py
 # Admin panel: User Management (CRUD + property assignment).
 # Accessible only to admin users.
 # Called from app.py via ?page=admin (auth guards already applied).

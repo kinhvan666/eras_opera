@@ -3,7 +3,7 @@
 seed_admin.py — Tạo admin user đầu tiên.
 
 Chạy một lần trên server sau khi deploy:
-    cd /path/to/dashboard_v2
+    cd /path/to/dashboard
     python scripts/seed_admin.py
 
 Hoặc qua Docker:

@@ -10,12 +10,12 @@ models:
           - unique
           - not_null
       - name: revenue_category
-        description: "Derived category from transaction_code prefix: Room / FnB / Tax / ServiceCharge / Other."
+        description: "Derived category from transaction_code prefix: Room / FnB / VAS (Value-Added Services — Spa, Laundry, Minibar, Misc)."
         tests:
           - not_null
           - accepted_values:
               arguments:
-                values: ['Room', 'FnB', 'Tax', 'ServiceCharge', 'Other']
+                values: ['Room', 'FnB', 'VAS']
       - name: reservation_id
         description: "OPERA reservation ID (guestInfo.reservationId.id). Nullable — unmatched postings have NULL."
       - name: hotel_id

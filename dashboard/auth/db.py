@@ -1,4 +1,4 @@
-# dashboard_v2/auth/db.py
+# dashboard/auth/db.py
 # Database operations for auth.users table.
 # All queries use parameterized inputs — no string interpolation.
 

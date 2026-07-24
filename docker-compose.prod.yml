@@ -16,9 +16,9 @@ services:
 
   dashboard:
     build:
-      context: ./dashboard_v2
+      context: ./dashboard
     env_file:
-      - ./dashboard_v2/.env.prod
+      - ./dashboard/.env.prod
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

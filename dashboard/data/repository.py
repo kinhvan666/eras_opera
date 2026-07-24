@@ -57,13 +57,22 @@ def _aggregate(df):
     }
 
 
+def _prior_range(start_date, end_date):
+    """Kỳ trước = khoảng liền trước có cùng độ dài, KHÔNG chồng lấn kỳ hiện tại.
+    Ví dụ: 01/01–22/07 (203 ngày) → kỳ trước 12/06/25–31/12/25."""
+    range_days = (end_date - start_date).days + 1
+    prior_end = start_date - timedelta(days=1)
+    prior_start = prior_end - timedelta(days=range_days - 1)
+    return prior_start, prior_end
+
+
 def fetch_kpi_summary(start_date, end_date, hotel_id=None):
     """Current vs prior-period aggregates for delta cards.
-    Per VALIDATE spec: WoW (shift 7d) for ranges <=14 days, MoM (shift 30d) for longer ranges."""
+    Prior period = non-overlapping preceding window of equal length;
+    returns None for prior when that window has no data (delta badge hidden)."""
     current = fetch_kpi_daily(start_date, end_date, hotel_id)
-    range_days = (end_date - start_date).days + 1
-    shift = timedelta(days=7 if range_days <= 14 else 30)
-    prior = fetch_kpi_daily(start_date - shift, end_date - shift, hotel_id)
+    prior_start, prior_end = _prior_range(start_date, end_date)
+    prior = fetch_kpi_daily(prior_start, prior_end, hotel_id)
     return _aggregate(current), _aggregate(prior)
 
 
@@ -77,11 +86,10 @@ REVENUE_BREAKDOWN_SQL = """
     with folio as (
         select
             reservation_id,
-            sum(posted_amount) as revenue
+            sum(net_amount) as revenue
         from analytics.fct_folio_line
         where revenue_date between %(start_date)s and %(end_date)s
           and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
-          and revenue_category != 'Tax'
         group by reservation_id
     ),
     res_attrs as (
@@ -158,7 +166,7 @@ def fetch_kpi_daily_segmented(start_date, end_date, hotel_id=None, segment_col=N
 
 
 REVENUE_ACTUAL_SQL = """
-    SELECT revenue_date, revenue_category, SUM(posted_amount) AS posted_amount
+    SELECT revenue_date, revenue_category, SUM(net_amount) AS posted_amount
     FROM analytics.fct_folio_line
     WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
       AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
@@ -177,11 +185,10 @@ def fetch_revenue_actual(start_date, end_date, hotel_id=None):
 
 
 REVENUE_ACTUAL_KPI_SQL = """
-    SELECT SUM(posted_amount) AS revenue
+    SELECT SUM(net_amount) AS revenue
     FROM analytics.fct_folio_line
     WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
       AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
-      AND revenue_category != 'Tax'
 """
 
 
@@ -196,16 +203,15 @@ def _fetch_revenue_actual_scalar(start_date, end_date, hotel_id=None):
 
 
 def fetch_revenue_actual_summary(start_date, end_date, hotel_id=None):
-    """Actual revenue KPI (excl. Tax) for current and prior period. Same shift logic as fetch_kpi_summary."""
-    range_days = (end_date - start_date).days + 1
-    shift = timedelta(days=7 if range_days <= 14 else 30)
+    """Actual revenue KPI (excl. Tax) for current and prior period. Same prior-range logic as fetch_kpi_summary."""
+    prior_start, prior_end = _prior_range(start_date, end_date)
     current_rev = _fetch_revenue_actual_scalar(start_date, end_date, hotel_id)
-    prior_rev = _fetch_revenue_actual_scalar(start_date - shift, end_date - shift, hotel_id)
+    prior_rev = _fetch_revenue_actual_scalar(prior_start, prior_end, hotel_id)
     return current_rev, prior_rev
 
 
 ROOM_REVENUE_SQL = """
-    SELECT COALESCE(SUM(posted_amount), 0) AS room_revenue
+    SELECT COALESCE(SUM(net_amount), 0) AS room_revenue
     FROM analytics.fct_folio_line
     WHERE revenue_date BETWEEN %(start_date)s AND %(end_date)s
       AND revenue_category = 'Room'
@@ -213,10 +219,14 @@ ROOM_REVENUE_SQL = """
 """
 
 ROOM_NIGHTS_SQL = """
+    -- Mẫu số ADR: loại đêm 0đ (comp/house-use) theo chuẩn STR/USALI —
+    -- đồng bộ với ADR ước tính trong kpi_daily_snapshot (đã loại sẵn).
+    -- Thẻ KPI "Số đêm đặt phòng" KHÔNG dùng SQL này (lấy từ kpi_daily_snapshot) nên không đổi.
     SELECT COUNT(*) AS room_nights
     FROM analytics.fct_reservation_night
     WHERE business_date BETWEEN %(start_date)s AND %(end_date)s
       AND reservation_status NOT IN ('Cancelled', 'NoShow')
+      AND night_amount > 0
       AND (%(hotel_id)s::text IS NULL OR hotel_id = %(hotel_id)s)
 """
 
@@ -246,13 +256,10 @@ def _fetch_adr_revpar_inputs(start_date, end_date, hotel_id=None):
 
 
 def fetch_adr_revpar_actual_summary(start_date, end_date, hotel_id=None):
-    """Actual ADR and RevPAR for current and prior period. Same 7d/30d shift as fetch_kpi_summary."""
-    range_days = (end_date - start_date).days + 1
-    shift = timedelta(days=7 if range_days <= 14 else 30)
+    """Actual ADR and RevPAR for current and prior period. Same prior-range logic as fetch_kpi_summary."""
+    prior_start, prior_end = _prior_range(start_date, end_date)
     curr_adr, curr_revpar = _fetch_adr_revpar_inputs(start_date, end_date, hotel_id)
-    prior_adr, prior_revpar = _fetch_adr_revpar_inputs(
-        start_date - shift, end_date - shift, hotel_id
-    )
+    prior_adr, prior_revpar = _fetch_adr_revpar_inputs(prior_start, prior_end, hotel_id)
     return curr_adr, curr_revpar, prior_adr, prior_revpar
 
 
@@ -273,6 +280,21 @@ def fetch_kpi_pacing(start_date, end_date, hotel_id=None):
             params={"start_date": start_date, "end_date": end_date, "hotel_id": hotel_id},
         )
 
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def fetch_pickup_daily(hotel_id=None, days=30):
+    """Số đêm đặt MỚI theo ngày đặt (booking_date) trong N ngày qua — gồm cả booking đã hủy sau đó thì loại."""
+    sql = """
+        select booking_date, count(*) as room_nights, sum(night_amount) as est_revenue
+        from analytics.fct_reservation_night
+        where booking_date >= current_date - %(days)s::int
+          and reservation_status not in ('Cancelled', 'NoShow')
+          and (%(hotel_id)s::text is null or hotel_id = %(hotel_id)s)
+        group by booking_date
+        order by booking_date
+    """
+    with psycopg2.connect(DATABASE_URL) as conn:
+        return pd.read_sql(sql, conn, params={"hotel_id": hotel_id, "days": days})
 
 @st.cache_data(ttl=CACHE_TTL_SECONDS)
 def fetch_kpi_pickup(hotel_id=None):

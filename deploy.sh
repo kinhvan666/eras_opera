@@ -73,13 +73,13 @@ if [ -n "$DASHBOARD_PID" ]; then
 fi
 
 # Start new dashboard session (runs in background, survives SSH logout via nohup)
-DASHBOARD_DIR="${BASE_DIR}/dashboard_v2"
+DASHBOARD_DIR="${BASE_DIR}/dashboard"
 if [ -f "${DASHBOARD_DIR}/app.py" ]; then
     cd "$DASHBOARD_DIR"
     nohup streamlit run app.py --server.port 8501 > "${LOG_DIR}/dashboard.log" 2>&1 &
     echo "  → Dashboard started on port 8501 (PID $!)"
 else
-    echo "  → WARNING: dashboard_v2/app.py not found at ${DASHBOARD_DIR}"
+    echo "  → WARNING: dashboard/app.py not found at ${DASHBOARD_DIR}"
 fi
 
 echo "========================================"

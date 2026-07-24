@@ -130,7 +130,7 @@ models:
         tests:
           - not_null
       - name: revenue_category
-        description: "Revenue category derived in staging (Room / FnB / Tax / ServiceCharge / Other)"
+        description: "Revenue category derived in staging (Room / FnB / VAS)"
         tests:
           - not_null
       - name: cashier_id

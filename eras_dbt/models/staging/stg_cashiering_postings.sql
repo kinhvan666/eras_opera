@@ -27,7 +27,8 @@ staged as (
             -- 8xxx tax codes are Room-related VAT adjustments
             when s.transaction_code like '80%' or s.transaction_code like '81%' then 'Room'
             when s.transaction_code like '2%' or s.transaction_code like '3%' or s.transaction_code like '71%' then 'FnB'
-            else 'Other'
+            -- VAS (Value-Added Services): Spa, Laundry, Minibar, Misc income — small ancillary revenue
+            else 'VAS'
         end                                                               as revenue_category,
 
         -- net_amount: 7xxx and 8xxx are tax/service-charge → subtract

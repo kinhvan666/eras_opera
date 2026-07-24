@@ -1,4 +1,4 @@
-# dashboard_v2/auth/utils.py
+# dashboard/auth/utils.py
 # Password hashing utilities using bcrypt.
 # Kept separate so the AD/LDAP migration later only needs to swap verify_password().
 

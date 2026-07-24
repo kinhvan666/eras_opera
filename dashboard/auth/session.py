@@ -1,4 +1,4 @@
-# dashboard_v2/auth/session.py
+# dashboard/auth/session.py
 # Session management and login/logout logic.
 # Login page UI is rendered here to keep app.py clean.
 

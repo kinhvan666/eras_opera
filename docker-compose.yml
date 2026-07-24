@@ -17,19 +17,9 @@ services:
     build:
       context: ./dashboard
     ports:
-      - "8502:8501"
-    depends_on:
-      - postgres
-    networks:
-      - eras-network
-
-  dashboard_v2:
-    build:
-      context: ./dashboard_v2
-    ports:
       - "8511:8501"
     volumes:
-      - ./dashboard_v2:/app
+      - ./dashboard:/app
     depends_on:
       - postgres
     networks:

@@ -8,16 +8,9 @@
       "port": 3001
     },
     {
-      "name": "dashboard",
-      "runtimeExecutable": "streamlit",
-      "runtimeArgs": ["run", "dashboard/app.py", "--server.address=0.0.0.0", "--server.port=8510"],
-      "port": 8510,
-      "autoPort": true
-    },
-    {
-        "name": "dashboard_v2",
+        "name": "dashboard",
         "runtimeExecutable": "streamlit",
-        "runtimeArgs": ["run", "dashboard_v2/app.py", "--server.address=0.0.0.0", "--server.port=8511"],
+        "runtimeArgs": ["run", "dashboard/app.py", "--server.address=0.0.0.0", "--server.port=8511"],
         "port": 8511,
         "autoPort": false
     },
