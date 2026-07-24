@@ -112,6 +112,7 @@ def _patched_altair_chart(altair_chart, use_container_width=False, theme="stream
             titleColor=text_color,
             domainColor=axis_color,
             gridColor=axis_color,
+            gridOpacity=0.15,
             tickColor=axis_color
         ),
         legend=alt.LegendConfig(
