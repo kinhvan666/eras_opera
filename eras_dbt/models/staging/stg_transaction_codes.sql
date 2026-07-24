@@ -39,4 +39,5 @@ select distinct on (hotel_id, tc->>'code')
     (tc->>'taxInclusive')::boolean as tax_inclusive,
     extracted_at
 from unnested
+where tc->>'code' is not null and tc->>'code' <> ''
 order by hotel_id, tc->>'code', extracted_at desc
