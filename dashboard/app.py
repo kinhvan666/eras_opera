@@ -103,7 +103,8 @@ def _patched_altair_chart(altair_chart, use_container_width=False, theme="stream
     is_light = st.session_state.get("ui_theme", "light") == "light"
     text_color = "#0F172A" if is_light else "#F8FAFC"
     axis_color = "#E2E8F0" if is_light else "#334155"
-    
+    grid_opacity = 0.4 if is_light else 0.15
+
     altair_chart = altair_chart.configure(
         background="transparent",
         title=alt.TitleConfig(color=text_color),
@@ -112,7 +113,7 @@ def _patched_altair_chart(altair_chart, use_container_width=False, theme="stream
             titleColor=text_color,
             domainColor=axis_color,
             gridColor=axis_color,
-            gridOpacity=0.15,
+            gridOpacity=grid_opacity,
             tickColor=axis_color
         ),
         legend=alt.LegendConfig(
