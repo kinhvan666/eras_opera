@@ -1,9 +1,9 @@
 #!/bin/bash
 # deploy.sh
-# Usage: ./deploy.sh               # extractor + dbt + restart dashboard
+# Usage: ./deploy.sh               # extractor + dbt + build/restart dashboard (Docker)
 # Usage: ./deploy.sh --skip-extract # only dbt + dashboard
 # Usage: ./deploy.sh --skip-dbt     # only extractor + dashboard
-# Usage: ./deploy.sh --skip-all     # only restart dashboard
+# Usage: ./deploy.sh --skip-all     # only build/restart dashboard
 #
 # Requires: docker compose, psql, pip, ~/.dbt/profiles.yml, .env.prod
 
@@ -62,25 +62,11 @@ else
     echo "[3/4] Skipping dbt."
 fi
 
-# ─── Step 4: Restart dashboard (streamlit) ────────────────────────────────
-echo "[4/4] Restarting dashboard..."
-# Find and kill existing streamlit process for this project
-DASHBOARD_PID=$(pgrep -f "streamlit run.*eras_opera" || true)
-if [ -n "$DASHBOARD_PID" ]; then
-    kill "$DASHBOARD_PID" 2>/dev/null || true
-    sleep 2
-    echo "  → Killed old dashboard (PID $DASHBOARD_PID)"
-fi
-
-# Start new dashboard session (runs in background, survives SSH logout via nohup)
-DASHBOARD_DIR="${BASE_DIR}/dashboard"
-if [ -f "${DASHBOARD_DIR}/app.py" ]; then
-    cd "$DASHBOARD_DIR"
-    nohup streamlit run app.py --server.port 8501 > "${LOG_DIR}/dashboard.log" 2>&1 &
-    echo "  → Dashboard started on port 8501 (PID $!)"
-else
-    echo "  → WARNING: dashboard/app.py not found at ${DASHBOARD_DIR}"
-fi
+# ─── Step 4: Build & restart dashboard (Docker) ────────────────────────────
+echo "[4/4] Building and restarting dashboard (Docker)..."
+cd "$BASE_DIR"
+docker compose -f docker-compose.prod.yml up -d --build dashboard >> "${LOG_DIR}/dashboard.log" 2>&1
+echo "  → Dashboard rebuilt and restarted on port 8502. Log: ${LOG_DIR}/dashboard.log"
 
 echo "========================================"
 echo " Deploy complete — $(date '+%Y-%m-%d %H:%M:%S')"
