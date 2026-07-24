@@ -27,15 +27,16 @@ unnested as (
         extracted_at
     from deduped
 )
-select distinct on (hotel_id, tc->>'transactionCode')
+select distinct on (hotel_id, tc->>'code')
     hotel_id,
-    tc->>'transactionCode' as transaction_code,
-    tc->>'description' as description,
-    case when tc->>'transactionCodeType' like '{' || '%' then tc->'transactionCodeType'->>'code' else tc->>'transactionCodeType' end as transaction_code_type,
-    case when tc->>'transactionGroup' like '{' || '%' then tc->'transactionGroup'->>'code' else tc->>'transactionGroup' end as transaction_group,
-    case when tc->>'transactionSubGroup' like '{' || '%' then tc->'transactionSubGroup'->>'code' else tc->>'transactionSubGroup' end as transaction_sub_group,
-    case when tc->>'classification' like '{' || '%' then coalesce(tc->'classification'->'transactionType'->>'code', tc->'classification'->>'code') else tc->>'classification' end as classification,
+    tc->>'code' as transaction_code,
+    tc->'description'->>'defaultText' as description,
+    tc->'classification'->'transactionType'->>'code' as transaction_code_type,
+    tc->'classification'->'group'->>'code' as transaction_group,
+    tc->'classification'->'subgroup'->>'code' as transaction_sub_group,
+    tc->'classification'->>'type' as classification,
     tc->'generatesSetup' as generates_setup,
+    (tc->>'taxInclusive')::boolean as tax_inclusive,
     extracted_at
 from unnested
-order by hotel_id, tc->>'transactionCode', extracted_at desc
+order by hotel_id, tc->>'code', extracted_at desc

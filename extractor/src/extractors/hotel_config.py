@@ -64,20 +64,21 @@ class HotelConfigExtractor:
 
     async def fetch_transaction_codes(self) -> dict:
         """Fetches transaction codes configuration.
-        
-        Endpoint: GET /csh/v1/hotels/{hotelId}/transactionCodes
+
+        Endpoint: GET /csh/v1/hotels/{hotelId}/transactionCodes  (Cashiering API)
         """
-        endpoint = f"/csh/v1/hotels/{settings.opera_hotel_id}/transactionCodes"
+        hotel_id = settings.opera_hotel_id
+        endpoint = f"/csh/v1/hotels/{hotel_id}/transactionCodes"
         params = {"limit": _PAGE_SIZE, "offset": 0}
         all_codes = []
-        
+
         while True:
             data = await self.client.fetch_one(endpoint, params=dict(params))
             codes = data.get("trxCodes") or data.get("transactionCodes") or []
             all_codes.extend(codes)
-            
+
             if not data.get("hasMore") or not codes:
                 break
             params["offset"] += len(codes)
-            
-        return {"transactionCodes": all_codes}
+
+        return {"trxCodes": all_codes}
